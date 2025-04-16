@@ -2,26 +2,78 @@
   <div class="clube-view">
     <h1 class="title">Clube</h1>
     <div class="content-wrapper">
-      <div class="info-card animate-slide-in">
-        <h2>Informação do Clube</h2>
-        <div class="info-content">
-          <div class="info-item">
-            <h3>História</h3>
-            <p>A história do clube será exibida aqui...</p>
-          </div>
-          <div class="info-item">
-            <h3>Títulos</h3>
-            <p>Lista de títulos do clube...</p>
-          </div>
-          <div class="info-item">
-            <h3>Estatísticas</h3>
-            <p>Estatísticas do clube...</p>
-          </div>
+      <template v-if="clube">
+        <div class="info-card animate-slide-in">
+          <h2>{{ clube.nome }}</h2>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <AddClube @clube-added="handleClubeAdded"></AddClube>
+      </template>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import { db } from '@/firebaseConfig'
+import { getAuth } from 'firebase/auth'
+import AddClube from '@/components/AddClube.vue'
+
+interface Clube {
+  id: string
+  nome: string
+  userId: string
+  createdAt: Date
+}
+
+const clube = ref<Clube | null>(null)
+
+const fetchClubeData = async () => {
+  console.log('Fetching clube data...')
+  try {
+    const auth = getAuth()
+    const userId = auth.currentUser?.uid
+
+    if (!userId) {
+      console.error('User not authenticated')
+      return
+    }
+
+    const clubesRef = collection(db, 'clubes')
+    const q = query(clubesRef, where('userId', '==', userId))
+    const querySnapshot = await getDocs(q)
+
+    if (!querySnapshot.empty) {
+      const clubeDoc = querySnapshot.docs[0]
+      const data = clubeDoc.data()
+      clube.value = {
+        id: clubeDoc.id,
+        nome: data.nome,
+        userId: data.userId,
+        createdAt: data.createdAt.toDate()
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching clube data:', error)
+  }
+}
+
+const handleClubeAdded = async (newClube: Clube) => {
+  console.log('Clube added event received:', newClube)
+  clube.value = newClube
+  await fetchClubeData()
+}
+
+onMounted(async () => {
+  console.log('ClubeView mounted')
+  const auth = getAuth()
+  console.log('Auth current user:', auth.currentUser)
+  await fetchClubeData()
+})
+
+</script>
 
 <style scoped>
 .clube-view {
@@ -76,7 +128,9 @@
   padding: 20px;
   background: rgba(30, 30, 30, 0.5);
   border-radius: 10px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .info-item:hover {
