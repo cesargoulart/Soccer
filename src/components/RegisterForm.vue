@@ -40,6 +40,16 @@
         placeholder="Confirm your password"
       />
     </div>
+    <div class="form-group">
+      <label for="register-team">Team</label>
+      <input
+        type="text"
+        id="register-team"
+        v-model="team"
+        required
+        placeholder="Enter your team name"
+      />
+    </div>
     <button type="submit" class="submit-button">Register</button>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
   </form>
@@ -55,6 +65,7 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const team = ref('') // Add new ref for team
 const errorMessage = ref('')
 
 // Define emits
@@ -81,6 +92,7 @@ const handleRegister = async () => {
     await setDoc(doc(db, 'users', user.uid), {
       username: username.value,
       email: email.value,
+      team: team.value, // Add the team field
       // Add any other user data you want to store
     })
 
@@ -89,7 +101,11 @@ const handleRegister = async () => {
     // AuthView's onAuthStateChanged will handle the UI update
   } catch (error) {
     console.error('Registration error:', error)
-    errorMessage.value = `Registration failed: ${error.message}`
+    if (error instanceof Error) {
+      errorMessage.value = `Registration failed: ${error.message}`
+    } else {
+      errorMessage.value = 'An unknown registration error occurred.'
+    }
   }
 }
 </script>

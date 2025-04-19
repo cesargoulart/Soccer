@@ -66,14 +66,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-
-interface Player {
-  id: number
-  name: string
-  position: string
-  number: number
-  rating: number
-}
+import { useTransfersStore, type Player } from '../stores/transfers' // Import Player type
 
 const selectedPlayer = ref<Player | null>(null)
 
@@ -92,26 +85,53 @@ const firePlayer = () => {
   }
 }
 
+const transfersStore = useTransfersStore()
+
 const sellPlayer = () => {
   if (selectedPlayer.value) {
-    // TODO: Implement sell logic
-    players.value = players.value.filter(p => p.id !== selectedPlayer.value!.id)
+    // Add player to transfer list
+    transfersStore.addPlayerForTransfer(selectedPlayer.value)
+
+    // Show success message with animation
+    const message = document.createElement('div')
+    message.textContent = 'Player listed for transfer successfully!'
+    message.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      padding: 15px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      animation: slideDown 0.3s ease forwards;
+    `
+    document.body.appendChild(message)
+
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+      message.style.animation = 'slideUp 0.3s ease forwards'
+      setTimeout(() => document.body.removeChild(message), 300)
+    }, 3000)
+
     closeModal()
   }
 }
 
 const players = ref<Player[]>([
-  { id: 1, name: 'Alex Silva', position: 'Guarda-Redes', number: 1, rating: 85 },
-  { id: 2, name: 'Bruno Costa', position: 'Defesa Direito', number: 2, rating: 82 },
-  { id: 3, name: 'Carlos Dias', position: 'Defesa Central', number: 4, rating: 84 },
-  { id: 4, name: 'David Rocha', position: 'Defesa Central', number: 5, rating: 83 },
-  { id: 5, name: 'Eduardo Lima', position: 'Defesa Esquerdo', number: 3, rating: 81 },
-  { id: 6, name: 'Fábio Mendes', position: 'Médio Defensivo', number: 6, rating: 86 },
-  { id: 7, name: 'Gustavo Alves', position: 'Médio Centro', number: 8, rating: 88 },
-  { id: 8, name: 'Hugo Pereira', position: 'Médio Ofensivo', number: 10, rating: 90 },
-  { id: 9, name: 'Igor Santos', position: 'Extremo Direito', number: 7, rating: 87 },
-  { id: 10, name: 'João Nunes', position: 'Extremo Esquerdo', number: 11, rating: 85 },
-  { id: 11, name: 'Kevin Andrade', position: 'Avançado', number: 9, rating: 89 }
+  { id: 1, name: 'Alex Silva', position: 'Guarda-Redes', number: 1, rating: 85, team: 'My Team' }, // Added team
+  { id: 2, name: 'Bruno Costa', position: 'Defesa Direito', number: 2, rating: 82, team: 'My Team' }, // Added team
+  { id: 3, name: 'Carlos Dias', position: 'Defesa Central', number: 4, rating: 84, team: 'My Team' }, // Added team
+  { id: 4, name: 'David Rocha', position: 'Defesa Central', number: 5, rating: 83, team: 'My Team' }, // Added team
+  { id: 5, name: 'Eduardo Lima', position: 'Defesa Esquerdo', number: 3, rating: 81, team: 'My Team' }, // Added team
+  { id: 6, name: 'Fábio Mendes', position: 'Médio Defensivo', number: 6, rating: 86, team: 'My Team' }, // Added team
+  { id: 7, name: 'Gustavo Alves', position: 'Médio Centro', number: 8, rating: 88, team: 'My Team' }, // Added team
+  { id: 8, name: 'Hugo Pereira', position: 'Médio Ofensivo', number: 10, rating: 90, team: 'My Team' }, // Added team
+  { id: 9, name: 'Igor Santos', position: 'Extremo Direito', number: 7, rating: 87, team: 'My Team' }, // Added team
+  { id: 10, name: 'João Nunes', position: 'Extremo Esquerdo', number: 11, rating: 85, team: 'My Team' }, // Added team
+  { id: 11, name: 'Kevin Andrade', position: 'Avançado', number: 9, rating: 89, team: 'My Team' } // Added team
 ])
 </script>
 
@@ -371,6 +391,28 @@ h3 {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -20px);
   }
 }
 </style>

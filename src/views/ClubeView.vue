@@ -62,7 +62,6 @@
             <p v-if="selectedTeamPlayers.length === 0">No players found for this team.</p>
           </div>
         </div>
-
       </template>
       <template v-else>
         <AddClube @clube-added="handleClubeAdded"></AddClube>
@@ -73,7 +72,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore' // Import doc and getDoc
 import { db } from '@/firebaseConfig'
 import { getAuth } from 'firebase/auth'
 import AddClube from '@/components/AddClube.vue'
@@ -98,9 +97,9 @@ interface LeagueTeam {
 }
 
 interface Player {
-  id: number | string; // Assuming id can be number or string based on data source
-  name: string;
-  position: string;
+  id: number | string // Assuming id can be number or string based on data source
+  name: string
+  position: string
   // Add other player properties as needed
 }
 
@@ -118,7 +117,7 @@ const fictionalTeams = [
   { name: 'Team Epsilon', played: 5, won: 2, drawn: 1, lost: 2, goalDifference: -1, points: 7 },
   { name: 'Team Zeta', played: 5, won: 1, drawn: 2, lost: 2, goalDifference: -3, points: 5 },
   { name: 'Team Eta', played: 5, won: 1, drawn: 0, lost: 4, goalDifference: -7, points: 3 },
-  { name: 'Team Theta', played: 5, won: 0, drawn: 1, lost: 4, goalDifference: -7, points: 1 }
+  { name: 'Team Theta', played: 5, won: 0, drawn: 1, lost: 4, goalDifference: -7, points: 1 },
 ]
 
 const clube = ref<Clube | null>(null)
@@ -143,12 +142,12 @@ const selectTeam = async (team: LeagueTeam) => {
       const playersQuery = query(playersRef, where('clubeId', '==', clubeId))
       const playersSnapshot = await getDocs(playersQuery)
 
-      selectedTeamPlayers.value = playersSnapshot.docs.map(doc => {
+      selectedTeamPlayers.value = playersSnapshot.docs.map((doc) => {
         const data = doc.data()
         return {
           id: doc.id,
           name: data.name,
-          position: data.position
+          position: data.position,
           // Map other player properties as needed
         } as Player // Cast to Player interface
       })
@@ -158,83 +157,157 @@ const selectTeam = async (team: LeagueTeam) => {
       // For fictional teams, you might want to add placeholder players or handle differently
       // For now, it will just show "No players found"
     }
-
   } catch (error) {
     console.error('Error fetching players:', error)
   }
 }
 
 const fetchAllClubeData = async () => {
-  console.log('Fetching all clube data...')
+  console.log('Fetching all league table data...')
   try {
-    const clubesRef = collection(db, 'clubes')
-    const querySnapshot = await getDocs(clubesRef)
+    const usersRef = collection(db, 'users')
+    const querySnapshot = await getDocs(usersRef)
 
-    const registeredTeams = querySnapshot.docs.map(doc => {
-      const data = doc.data()
-      // Assuming registered clubs have basic league stats or default to 0
-      return {
-        name: data.nome,
-        played: 0,
-        won: 0,
-        drawn: 0,
-        lost: 0,
-        goalDifference: 0,
-        points: 0
-      }
-    })
+    const registeredTeams = querySnapshot.docs
+      .map((doc) => doc.data().team) // Get the 'team' field
+      .filter((teamName) => teamName && typeof teamName === 'string') // Filter out null/empty/non-string team names
+      .map((teamName) => {
+        // Create LeagueTeam object for each registered team
+        return {
+          name: teamName,
+          played: 0, // Default stats for now
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          goalDifference: 0,
+          points: 0,
+        }
+      })
 
-    // Combine registered teams and fictional teams, limiting to 8 total
-    const remainingSlots = 8 - registeredTeams.length
-    const teamsToInclude = [...registeredTeams, ...fictionalTeams.slice(0, remainingSlots)]
-    leagueTable.value = teamsToInclude
+    // Limit registered teams to a maximum of 8
+    const limitedRegisteredTeams = registeredTeams.slice(0, 8);
 
-    console.log('Fetched and combined league table data:', leagueTable.value)
+    // Calculate how many fictional teams are needed to reach 8
+    const remainingSlots = 8 - limitedRegisteredTeams.length;
+
+    // Combine registered teams and fictional teams, ensuring exactly 8 total
+    const teamsToInclude = [
+      ...limitedRegisteredTeams,
+      ...fictionalTeams.slice(0, remainingSlots),
+    ];
+
+    leagueTable.value = teamsToInclude;
+
+    console.log('Fetched and combined league table data:', leagueTable.value);
   } catch (error) {
-    console.error('Error fetching all clube data:', error)
+    console.error('Error fetching league table data:', error);
   }
-}
+};
+
+// Modify the fetchUserClubeData function in ClubeView.vue
 
 const fetchUserClubeData = async () => {
   console.log('Fetching user clube data...')
   try {
     const auth = getAuth()
-    const userId = auth.currentUser?.uid
+    const user = auth.currentUser
 
-    if (!userId) {
+    if (!user) {
       console.error('User not authenticated')
       return
     }
 
-    const clubesRef = collection(db, 'clubes')
-    const q = query(clubesRef, where('userId', '==', userId))
-    const querySnapshot = await getDocs(q)
+    // First, fetch the user's document to get the team name
+    const userDocRef = doc(db, 'users', user.uid)
+    const userDocSnap = await getDoc(userDocRef)
 
-    if (!querySnapshot.empty) {
-      const clubeDoc = querySnapshot.docs[0]
-      const data = clubeDoc.data()
-      clube.value = {
-        id: clubeDoc.id,
-        nome: data.nome,
-        userId: data.userId,
-        createdAt: data.createdAt.toDate(),
-        stadium: data.stadium, // Fetch stadium
-        region: data.region // Fetch region
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data()
+      const userTeamName = userData.team // This comes from the user's profile
+      console.log('User team from profile:', userTeamName)
+
+      if (userTeamName) {
+        // If a team name is found, first check if it exists in clubes collection
+        const clubesRef = collection(db, 'clubes')
+        const q = query(clubesRef, where('nome', '==', userTeamName))
+        const querySnapshot = await getDocs(q)
+
+        if (!querySnapshot.empty) {
+          // Team exists in clubes collection, proceed as normal
+          const clubeDoc = querySnapshot.docs[0]
+          const data = clubeDoc.data()
+          clube.value = {
+            id: clubeDoc.id,
+            nome: data.nome,
+            userId: data.userId || user.uid, // Default to current user if missing
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+            stadium: data.stadium || 'Home Stadium', // Default value if missing
+            region: data.region || 'Local Region', // Default value if missing
+          }
+          console.log('Fetched existing clube:', clube.value)
+
+          // Create a team object to pass to selectTeam
+          const userTeamForSelection = {
+            name: clube.value.nome,
+            played: 0,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalDifference: 0,
+            points: 0,
+          }
+
+          // Automatically select the user's team
+          await selectTeam(userTeamForSelection)
+        } else {
+          // Team doesn't exist in clubes collection yet, create it
+          console.log('Creating new clube for team:', userTeamName)
+
+          // Create a basic clube object with the user's team name
+          clube.value = {
+            id: 'temp-id', // Will be replaced when saved
+            nome: userTeamName,
+            userId: user.uid,
+            createdAt: new Date(),
+            stadium: 'Home Stadium', // Default value
+            region: 'Local Region', // Default value
+          }
+
+          // You would typically save this to Firestore here
+          // For now, we're just ensuring the UI shows the team info
+
+          // Create a team object to pass to selectTeam
+          const userTeamForSelection = {
+            name: userTeamName,
+            played: 0,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalDifference: 0,
+            points: 0,
+          }
+
+          // Automatically select the user's team
+          await selectTeam(userTeamForSelection)
+        }
+      } else {
+        console.log('No team name found in user document.')
+        clube.value = null // Show AddClube component
       }
-      console.log('Fetched user clube data:', clube.value) // Log fetched data
     } else {
-      console.log('No clube found for this user.')
+      console.log('User document not found.')
+      clube.value = null // Show AddClube component
     }
   } catch (error) {
-    console.error('Error fetching user clube data:', error)
+    console.error('Error fetching user or clube data:', error)
+    clube.value = null // Ensure clube is null on error
   }
 }
-
 
 const handleClubeAdded = async (newClube: Clube) => {
   console.log('Clube added event received:', newClube)
   clube.value = newClube
-  await fetchUserClubeData()
+  await fetchUserClubeData() // Fetch again to ensure consistency, though newClube should be sufficient
   await fetchAllClubeData() // Refresh league table after adding a club
 }
 
@@ -242,10 +315,9 @@ onMounted(async () => {
   console.log('ClubeView mounted')
   const auth = getAuth()
   console.log('Auth current user:', auth.currentUser)
-  await fetchUserClubeData()
-  await fetchAllClubeData() // Fetch all clubs on mount
+  await fetchUserClubeData() // Fetch user's club based on registered team
+  await fetchAllClubeData() // Fetch all clubs for the league table
 })
-
 </script>
 
 <style scoped>
@@ -419,14 +491,13 @@ onMounted(async () => {
 }
 
 .sell-button {
-  background-color: #4CAF50; /* Green color for sell */
+  background-color: #4caf50; /* Green color for sell */
   color: white;
 }
 
 .sell-button:hover {
   background-color: #45a049;
 }
-
 
 .player-card {
   background: rgba(45, 45, 45, 0.7);
@@ -475,14 +546,13 @@ onMounted(async () => {
 }
 
 .sell-button {
-  background-color: #4CAF50; /* Green color for sell */
+  background-color: #4caf50; /* Green color for sell */
   color: white;
 }
 
 .sell-button:hover {
   background-color: #45a049;
 }
-
 
 h2 {
   font-size: 1.8em;
