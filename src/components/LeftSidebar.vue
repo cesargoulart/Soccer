@@ -10,14 +10,36 @@
       <router-link to="/jogos" class="menu-item">
         <span>Jogos</span>
       </router-link>
+      <router-link to="/economy" class="menu-item">
+        <span>Economy</span>
+      </router-link>
+      <router-link to="/transfers" class="menu-item">
+        <span>Transfers</span>
+      </router-link>
+      <button @click="logout" class="menu-item logout-button">
+        <span>Logout</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { getAuth, signOut } from 'firebase/auth'
+import { useRouter } from 'vue-router'
 
 const isOpen = ref(true)
+const router = useRouter()
+
+const logout = async () => {
+  const auth = getAuth()
+  try {
+    await signOut(auth)
+    router.push('/auth') // Redirect to login page after logout
+  } catch (error) {
+    console.error('Logout failed:', error)
+  }
+}
 </script>
 
 <style scoped>
@@ -43,6 +65,8 @@ const isOpen = ref(true)
   flex-direction: column;
   gap: 10px;
   padding: 20px;
+  height: 100%; /* Ensure menu-items takes full height */
+  position: relative; /* Needed for absolute positioning of logout button */
 }
 
 .menu-item {
@@ -64,5 +88,20 @@ const isOpen = ref(true)
 .menu-item.router-link-active {
   background: #4a4a4a;
   border-left: 4px solid #646cff;
+}
+
+.logout-button {
+  position: absolute;
+  bottom: 20px; /* Position at the bottom */
+  left: 20px; /* Align with other menu items */
+  width: calc(100% - 40px); /* Match width of container minus padding */
+  background-color: #d32f2f; /* Distinct color for logout */
+  border: none;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background-color: #b71c1c;
+  transform: none; /* Override hover transform if needed */
 }
 </style>

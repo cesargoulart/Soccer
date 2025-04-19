@@ -27,6 +27,18 @@ const router = createRouter({
       name: 'jogos',
       component: () => import('../views/JogosView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/economy',
+      name: 'economy',
+      component: () => import('../views/EconomyView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/transfers',
+      name: 'transfers',
+      component: () => import('../views/TransfersView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })
