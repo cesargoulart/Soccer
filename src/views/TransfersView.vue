@@ -43,7 +43,7 @@ import { useTransfersStore } from '../stores/transfers'
 
 const transfersStore = useTransfersStore()
 
-const removeFromTransfer = (playerId: number) => {
+const removeFromTransfer = (playerId: string) => {
   transfersStore.removePlayerFromTransfer(playerId)
 }
 </script>

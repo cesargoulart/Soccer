@@ -163,42 +163,70 @@ const selectTeam = async (team: LeagueTeam) => {
 }
 
 const fetchAllClubeData = async () => {
-  console.log('Fetching all league table data...')
+  console.log('Fetching all league table data...');
   try {
-    const usersRef = collection(db, 'users')
-    const querySnapshot = await getDocs(usersRef)
+    const usersRef = collection(db, 'users');
+    const querySnapshot = await getDocs(usersRef);
+    console.log('Users query snapshot received:', querySnapshot);
 
-    const registeredTeams = querySnapshot.docs
-      .map((doc) => doc.data().team) // Get the 'team' field
-      .filter((teamName) => teamName && typeof teamName === 'string') // Filter out null/empty/non-string team names
-      .map((teamName) => {
-        // Create LeagueTeam object for each registered team
-        return {
-          name: teamName,
-          played: 0, // Default stats for now
-          won: 0,
-          drawn: 0,
-          lost: 0,
-          goalDifference: 0,
-          points: 0,
+    const registeredTeams: LeagueTeam[] = querySnapshot.docs
+      .map((doc) => {
+        const userData = doc.data();
+        console.log('Processing user document for league table:', doc.id, userData);
+        const teamName = userData.team;
+        if (teamName && typeof teamName === 'string') {
+          // Create LeagueTeam object for each registered team
+          return {
+            name: teamName,
+            played: 0, // Default stats for now
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalDifference: 0,
+            points: 0,
+          };
         }
+        return null; // Filter out users without a valid team name
       })
+      .filter((team): team is LeagueTeam => team !== null); // Filter out null values
 
-    // Limit registered teams to a maximum of 8
-    const limitedRegisteredTeams = registeredTeams.slice(0, 8);
+    console.log('Registered teams fetched:', registeredTeams);
 
-    // Calculate how many fictional teams are needed to reach 8
-    const remainingSlots = 8 - limitedRegisteredTeams.length;
+    // Combine registered teams with fictional teams, replacing fictional teams
+    const teamsToInclude: LeagueTeam[] = [];
+    const maxTeams = 8;
 
-    // Combine registered teams and fictional teams, ensuring exactly 8 total
-    const teamsToInclude = [
-      ...limitedRegisteredTeams,
-      ...fictionalTeams.slice(0, remainingSlots),
-    ];
+    // Add registered teams first, up to maxTeams
+    for (const team of registeredTeams) {
+      if (teamsToInclude.length < maxTeams) {
+        teamsToInclude.push(team);
+      } else {
+        break;
+      }
+    }
+
+    // Fill remaining slots with fictional teams
+    const fictionalStartIndex = 0; // Start from the beginning of fictionalTeams
+    for (let i = fictionalStartIndex; teamsToInclude.length < maxTeams && i < fictionalTeams.length; i++) {
+      // Only add fictional teams if a real team with the same name doesn't exist
+      if (!teamsToInclude.some(team => team.name === fictionalTeams[i].name)) {
+         teamsToInclude.push(fictionalTeams[i]);
+      }
+    }
+
+
+    // Sort the league table by points (descending) and then goal difference (descending)
+    teamsToInclude.sort((a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+      return b.goalDifference - a.goalDifference;
+    });
+
 
     leagueTable.value = teamsToInclude;
 
-    console.log('Fetched and combined league table data:', leagueTable.value);
+    console.log('Final league table data:', leagueTable.value);
   } catch (error) {
     console.error('Error fetching league table data:', error);
   }

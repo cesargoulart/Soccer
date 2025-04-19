@@ -57,9 +57,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { auth, db } from '@/firebaseConfig'
+import { auth, db } from '../firebaseConfig'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
+import { generateAndSavePlayers } from '../utils/playerGenerator'
 
 const username = ref('')
 const email = ref('')
@@ -95,6 +96,9 @@ const handleRegister = async () => {
       team: team.value, // Add the team field
       // Add any other user data you want to store
     })
+
+    // Generate and save 11 players for the new team
+    await generateAndSavePlayers(user.uid);
 
     // Emit success event instead of alert
     emit('register-success');

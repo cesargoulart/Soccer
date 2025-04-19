@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export interface Player { // Exported the interface
-  id: number;
+  id: string;
   name: string;
   position: string;
   number: number;
@@ -20,7 +20,7 @@ export const useTransfersStore = defineStore('transfers', () => {
     }
   };
 
-  const removePlayerFromTransfer = (playerId: number) => {
+  const removePlayerFromTransfer = (playerId: string) => {
     playersForTransfer.value = playersForTransfer.value.filter(player => player.id !== playerId);
   };
 

@@ -65,10 +65,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useTransfersStore, type Player } from '../stores/transfers' // Import Player type
+import { auth, db } from '../firebaseConfig' // Import auth and db
+import { collection, query, getDocs } from 'firebase/firestore' // Import Firestore functions
 
 const selectedPlayer = ref<Player | null>(null)
+const players = ref<Player[]>([]) // Initialize players as an empty array
+let authListener: () => void // To store the auth state change listener
 
 const openPlayerModal = (player: Player) => {
   selectedPlayer.value = player
@@ -120,19 +124,65 @@ const sellPlayer = () => {
   }
 }
 
-const players = ref<Player[]>([
-  { id: 1, name: 'Alex Silva', position: 'Guarda-Redes', number: 1, rating: 85, team: 'My Team' }, // Added team
-  { id: 2, name: 'Bruno Costa', position: 'Defesa Direito', number: 2, rating: 82, team: 'My Team' }, // Added team
-  { id: 3, name: 'Carlos Dias', position: 'Defesa Central', number: 4, rating: 84, team: 'My Team' }, // Added team
-  { id: 4, name: 'David Rocha', position: 'Defesa Central', number: 5, rating: 83, team: 'My Team' }, // Added team
-  { id: 5, name: 'Eduardo Lima', position: 'Defesa Esquerdo', number: 3, rating: 81, team: 'My Team' }, // Added team
-  { id: 6, name: 'Fábio Mendes', position: 'Médio Defensivo', number: 6, rating: 86, team: 'My Team' }, // Added team
-  { id: 7, name: 'Gustavo Alves', position: 'Médio Centro', number: 8, rating: 88, team: 'My Team' }, // Added team
-  { id: 8, name: 'Hugo Pereira', position: 'Médio Ofensivo', number: 10, rating: 90, team: 'My Team' }, // Added team
-  { id: 9, name: 'Igor Santos', position: 'Extremo Direito', number: 7, rating: 87, team: 'My Team' }, // Added team
-  { id: 10, name: 'João Nunes', position: 'Extremo Esquerdo', number: 11, rating: 85, team: 'My Team' }, // Added team
-  { id: 11, name: 'Kevin Andrade', position: 'Avançado', number: 9, rating: 89, team: 'My Team' } // Added team
-])
+// Function to fetch players for the logged-in team
+const fetchPlayers = async (teamId: string) => {
+  console.log('Attempting to fetch players for teamId:', teamId);
+  try {
+    // Fetch players from the 'players' subcollection under the user's document
+    const playersCollectionRef = collection(db, 'users', teamId, 'players')
+    const q = query(playersCollectionRef)
+    console.log('Firestore query created:', q);
+    const querySnapshot = await getDocs(q)
+    console.log('Query snapshot received:', querySnapshot);
+
+    const fetchedPlayers: Player[] = []
+    querySnapshot.forEach((doc) => {
+      const data = doc.data()
+      console.log('Processing player document:', doc.id, data);
+      // Explicitly map data to Player type, ensuring all properties exist
+      // Note: 'number' and 'rating' were not generated in playerGenerator.ts,
+      // so we'll use 'overall' for rating and assign a default number for now.
+      if (data && typeof data.name === 'string' && typeof data.position === 'string' && typeof data.overall === 'number') {
+        fetchedPlayers.push({
+          id: doc.id,
+          name: data.name,
+          position: data.position,
+          number: fetchedPlayers.length + 1, // Assign a sequential number for display
+          rating: data.overall, // Use 'overall' from generated data
+          team: teamId // Use the teamId (user UID)
+        })
+      } else {
+        console.warn('Skipping player document with missing or incorrect data:', doc.id, data)
+      }
+    })
+    console.log('Fetched players:', fetchedPlayers);
+    players.value = fetchedPlayers
+  } catch (error) {
+    console.error('Error fetching players:', error)
+    players.value = [] // Clear players on error
+  }
+}
+
+// Listen for auth state changes
+onMounted(() => {
+  authListener = auth.onAuthStateChanged((user: import('firebase/auth').User | null) => {
+    if (user) {
+      // User is logged in, fetch players for their team
+      // Assuming the team ID is the user's UID
+      fetchPlayers(user.uid)
+    } else {
+      // User is logged out, clear players
+      players.value = []
+    }
+  })
+})
+
+// Clean up the auth listener when the component is unmounted
+onUnmounted(() => {
+  if (authListener) {
+    authListener()
+  }
+})
 </script>
 
 <style scoped>
