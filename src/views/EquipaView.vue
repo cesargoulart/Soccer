@@ -15,7 +15,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="player in players" :key="player.id">
+            <tr
+              v-for="player in players"
+              :key="player.id"
+              @click="openPlayerModal(player)"
+              class="clickable-row"
+            >
               <td>{{ player.number }}</td>
               <td>{{ player.name }}</td>
               <td>{{ player.position }}</td>
@@ -41,6 +46,22 @@
       </div>
     </div>
   </div>
+<!-- Player Modal -->
+<div v-if="selectedPlayer" class="modal-overlay" @click="closeModal">
+  <div class="modal-content animate-modal" @click.stop>
+    <h2>{{ selectedPlayer.name }}</h2>
+    <div class="player-details">
+      <p><strong>Number:</strong> {{ selectedPlayer.number }}</p>
+      <p><strong>Position:</strong> {{ selectedPlayer.position }}</p>
+      <p><strong>Rating:</strong> {{ selectedPlayer.rating }}</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-fire" @click="firePlayer">Fire Player</button>
+      <button class="btn-sell" @click="sellPlayer">Sell Player</button>
+    </div>
+    <button class="btn-close" @click="closeModal">×</button>
+  </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -54,7 +75,31 @@ interface Player {
   rating: number
 }
 
-// Placeholder player data for 11 players
+const selectedPlayer = ref<Player | null>(null)
+
+const openPlayerModal = (player: Player) => {
+  selectedPlayer.value = player
+}
+
+const closeModal = () => {
+  selectedPlayer.value = null
+}
+
+const firePlayer = () => {
+  if (selectedPlayer.value) {
+    players.value = players.value.filter(p => p.id !== selectedPlayer.value!.id)
+    closeModal()
+  }
+}
+
+const sellPlayer = () => {
+  if (selectedPlayer.value) {
+    // TODO: Implement sell logic
+    players.value = players.value.filter(p => p.id !== selectedPlayer.value!.id)
+    closeModal()
+  }
+}
+
 const players = ref<Player[]>([
   { id: 1, name: 'Alex Silva', position: 'Guarda-Redes', number: 1, rating: 85 },
   { id: 2, name: 'Bruno Costa', position: 'Defesa Direito', number: 2, rating: 82 },
@@ -162,8 +207,127 @@ const players = ref<Player[]>([
   transition: background-color 0.3s ease;
 }
 
+.player-table tbody tr.clickable-row {
+  cursor: pointer;
+}
+
 .player-table tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(100, 108, 255, 0.1);
+  transform: scale(1.01);
+  transition: all 0.3s ease;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  padding: 30px;
+  border-radius: 15px;
+  min-width: 400px;
+  position: relative;
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  box-shadow: 0 0 30px rgba(100, 108, 255, 0.2);
+}
+
+.animate-modal {
+  animation: modalSlideIn 0.3s ease forwards;
+}
+
+.player-details {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(45, 45, 45, 0.5);
+  border-radius: 10px;
+}
+
+.player-details p {
+  margin: 10px 0;
+  color: #e0e0e0;
+}
+
+.player-details strong {
+  color: #646cff;
+  margin-right: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.btn-fire, .btn-sell {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-fire {
+  background: linear-gradient(135deg, #ff4646 0%, #ff7070 100%);
+  color: white;
+}
+
+.btn-sell {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+}
+
+.btn-fire:hover, .btn-sell:hover {
+  transform: translateY(-2px);
+  filter: brightness(110%);
+}
+
+.btn-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #646cff;
+  font-size: 24px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+  background: rgba(100, 108, 255, 0.1);
+  transform: rotate(90deg);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .player-table td:first-child { /* Style player number */
