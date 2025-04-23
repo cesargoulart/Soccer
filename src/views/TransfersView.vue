@@ -14,7 +14,9 @@
               <th>Name</th>
               <th>Position</th>
               <th>Rating</th>
-              <th>Team</th> <!-- Added Team header -->
+              <th>Price</th>
+              <!-- Added Price header -->
+              <th>Team</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -24,11 +26,20 @@
               <td>{{ player.name }}</td>
               <td>{{ player.position }}</td>
               <td>{{ player.rating }}</td>
-              <td>{{ player.team }}</td> <!-- Added Team data -->
+              <td>{{ player.price ? `€${player.price.toLocaleString()}` : 'N/A' }}</td>
+              <!-- Display Price -->
+              <td>{{ player.team }}</td>
               <td>
-                <button class="btn-remove" @click="removeFromTransfer(player.id)">
+                <!-- Conditionally render buttons based on team ownership -->
+                <button
+                  v-if="player.team === currentUserTeam"
+                  class="btn-remove"
+                  @click="removeFromTransfer(player.id)"
+                >
                   Remove from List
                 </button>
+                <!-- Use a different class for styling -->
+                <button v-else class="btn-buy" @click="buyPlayer(player)">Buy Player</button>
               </td>
             </tr>
           </tbody>
@@ -39,13 +50,82 @@
 </template>
 
 <script setup lang="ts">
-import { useTransfersStore } from '../stores/transfers'
+import { ref, onMounted, onUnmounted } from 'vue' // Import ref and lifecycle hooks
+import { useTransfersStore, type Player } from '../stores/transfers' // Import Player type
+import { getAuth, onAuthStateChanged, type User } from 'firebase/auth' // Import auth functions and User type
+import { doc, getDoc } from 'firebase/firestore' // Import Firestore functions
+import { db } from '../firebaseConfig' // Import db instance
 
 const transfersStore = useTransfersStore()
+const currentUserTeam = ref<string | null>(null) // To store the logged-in user's team name
+let authListener: (() => void) | null = null // To store the auth state change listener
 
 const removeFromTransfer = (playerId: string) => {
+  // The playerId here is the Firestore document ID from the transfer list
   transfersStore.removePlayerFromTransfer(playerId)
 }
+
+// Placeholder function for buying a player
+const buyPlayer = async (player: Player) => {
+  if (!currentUserTeam.value) {
+    console.error('Current user team not loaded.')
+    // Optionally show an error message to the user
+    return
+  }
+  try {
+    console.log('Attempting to buy player:', player.name, 'for team:', currentUserTeam.value)
+    await transfersStore.buyPlayer(player, currentUserTeam.value)
+    console.log('Player bought successfully!')
+    // Optionally show a success message to the user
+  } catch (error) {
+    console.error('Failed to buy player:', error)
+    // Optionally show an error message to the user
+  }
+}
+
+// Fetch the logged-in user's team name
+const fetchUserTeam = async (userId: string) => {
+  try {
+    const userDocRef = doc(db, 'users', userId)
+    const userDocSnap = await getDoc(userDocRef)
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data()
+      currentUserTeam.value = userData.team || null // Assuming 'team' field exists
+      console.log('Fetched current user team:', currentUserTeam.value)
+    } else {
+      currentUserTeam.value = null
+      console.log('User document not found.')
+    }
+  } catch (error) {
+    console.error('Error fetching user team:', error)
+    currentUserTeam.value = null
+  }
+}
+
+// Subscribe to the transfer list and listen for auth state changes when the component is mounted
+onMounted(() => {
+  transfersStore.subscribeToTransferList()
+
+  // Listen for auth state changes to get the current user's team
+  const auth = getAuth()
+  authListener = onAuthStateChanged(auth, (user: User | null) => {
+    if (user) {
+      // User is logged in, fetch their team
+      fetchUserTeam(user.uid)
+    } else {
+      // User is logged out, clear the team
+      currentUserTeam.value = null
+    }
+  })
+})
+
+// Unsubscribe from the transfer list and auth listener when the component is unmounted
+onUnmounted(() => {
+  transfersStore.unsubscribe()
+  if (authListener) {
+    authListener() // Unsubscribe from auth listener
+  }
+})
 </script>
 
 <style scoped>
@@ -144,6 +224,22 @@ const removeFromTransfer = (playerId: string) => {
 }
 
 .btn-remove:hover {
+  transform: translateY(-2px);
+  filter: brightness(110%);
+}
+
+.btn-buy {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-buy:hover {
   transform: translateY(-2px);
   filter: brightness(110%);
 }

@@ -13,8 +13,11 @@
       <router-link to="/economy" class="menu-item">
         <span>Economy</span>
       </router-link>
-      <router-link to="/transfers" class="menu-item">
+      <router-link to="/transfers" class="menu-item transfer-link">
         <span>Transfers</span>
+        <span v-if="totalTransferValue > 0" class="transfer-value">
+          (${{ totalTransferValue.toLocaleString() }})
+        </span>
       </router-link>
       <button @click="logout" class="menu-item logout-button">
         <span>Logout</span>
@@ -24,12 +27,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue' // Import computed
 import { getAuth, signOut } from 'firebase/auth'
 import { useRouter } from 'vue-router'
+import { useTransfersStore } from '../stores/transfers' // Import the transfers store
 
 const isOpen = ref(true)
 const router = useRouter()
+const transfersStore = useTransfersStore() // Get the store instance
+
+// Calculate total transfer value reactively
+const totalTransferValue = computed(() => {
+  return transfersStore.playersForTransfer.reduce((sum, player) => sum + (player.price || 0), 0);
+});
 
 const logout = async () => {
   const auth = getAuth()
@@ -88,6 +98,19 @@ const logout = async () => {
 .menu-item.router-link-active {
   background: #4a4a4a;
   border-left: 4px solid #646cff;
+}
+
+.transfer-link {
+  display: flex;
+  justify-content: space-between; /* Align text and value */
+  align-items: center;
+}
+
+.transfer-value {
+  font-size: 0.8em;
+  color: #a8b4ff; /* Lighter color for value */
+  margin-left: 8px;
+  font-weight: normal;
 }
 
 .logout-button {

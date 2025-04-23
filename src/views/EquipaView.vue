@@ -46,33 +46,47 @@
       </div>
     </div>
   </div>
-<!-- Player Modal -->
-<div v-if="selectedPlayer" class="modal-overlay" @click="closeModal">
-  <div class="modal-content animate-modal" @click.stop>
-    <h2>{{ selectedPlayer.name }}</h2>
-    <div class="player-details">
-      <p><strong>Number:</strong> {{ selectedPlayer.number }}</p>
-      <p><strong>Position:</strong> {{ selectedPlayer.position }}</p>
-      <p><strong>Rating:</strong> {{ selectedPlayer.rating }}</p>
+  <!-- Player Modal -->
+  <div v-if="selectedPlayer" class="modal-overlay" @click="closeModal">
+    <div class="modal-content animate-modal" @click.stop>
+      <h2>{{ selectedPlayer.name }}</h2>
+      <div class="player-details">
+        <p><strong>Number:</strong> {{ selectedPlayer.number }}</p>
+        <p><strong>Position:</strong> {{ selectedPlayer.position }}</p>
+        <p><strong>Rating:</strong> {{ selectedPlayer.rating }}</p>
+      </div>
+      <!-- Add Price Input -->
+      <div class="price-input-group">
+        <label for="sellPrice">Selling Price:</label>
+        <input
+          type="number"
+          id="sellPrice"
+          v-model.number="sellPrice"
+          placeholder="Enter price"
+          class="price-input"
+        />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-fire" @click="firePlayer">Fire Player</button>
+        <button class="btn-sell" @click="sellPlayer">Sell Player</button>
+      </div>
+      <button class="btn-close" @click="closeModal">×</button>
     </div>
-    <div class="modal-actions">
-      <button class="btn-fire" @click="firePlayer">Fire Player</button>
-      <button class="btn-sell" @click="sellPlayer">Sell Player</button>
-    </div>
-    <button class="btn-close" @click="closeModal">×</button>
   </div>
-</div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useTransfersStore, type Player } from '../stores/transfers' // Import Player type
 import { auth, db } from '../firebaseConfig' // Import auth and db
-import { collection, query, getDocs } from 'firebase/firestore' // Import Firestore functions
+import { collection, query, doc, getDoc, onSnapshot } from 'firebase/firestore' // Import Firestore functions
+import type { Unsubscribe } from 'firebase/firestore' // Import Unsubscribe type separately
 
 const selectedPlayer = ref<Player | null>(null)
+const sellPrice = ref<number | null>(null) // Add ref for selling price
 const players = ref<Player[]>([]) // Initialize players as an empty array
 let authListener: () => void // To store the auth state change listener
+let playersListener: Unsubscribe | null = null // To store the players listener unsubscribe function
 
 const openPlayerModal = (player: Player) => {
   selectedPlayer.value = player
@@ -80,11 +94,12 @@ const openPlayerModal = (player: Player) => {
 
 const closeModal = () => {
   selectedPlayer.value = null
+  sellPrice.value = null // Reset price on close
 }
 
 const firePlayer = () => {
   if (selectedPlayer.value) {
-    players.value = players.value.filter(p => p.id !== selectedPlayer.value!.id)
+    players.value = players.value.filter((p) => p.id !== selectedPlayer.value!.id)
     closeModal()
   }
 }
@@ -92,9 +107,22 @@ const firePlayer = () => {
 const transfersStore = useTransfersStore()
 
 const sellPlayer = () => {
-  if (selectedPlayer.value) {
-    // Add player to transfer list
-    transfersStore.addPlayerForTransfer(selectedPlayer.value)
+  if (selectedPlayer.value && sellPrice.value !== null && sellPrice.value > 0) {
+    const playerWithPrice = {
+      ...selectedPlayer.value,
+      price: sellPrice.value,
+    }
+
+    console.log('BEFORE sending to transfer store - Player data:', {
+      id: playerWithPrice.id,
+      name: playerWithPrice.name,
+      price: playerWithPrice.price, // Verificar se o preço está presente aqui
+      priceType: typeof playerWithPrice.price, // Verificar o tipo de dado do preço
+    })
+
+    // Add player to transfer list with price
+    // TODO: Update addPlayerForTransfer to accept price
+    transfersStore.addPlayerForTransfer({ ...selectedPlayer.value, price: sellPrice.value })
 
     // Show success message with animation
     const message = document.createElement('div')
@@ -121,45 +149,81 @@ const sellPlayer = () => {
     }, 3000)
 
     closeModal()
+  } else {
+    // Optional: Show an error message if price is invalid
+    alert('Please enter a valid selling price.')
   }
 }
 
 // Function to fetch players for the logged-in team
-const fetchPlayers = async (teamId: string) => {
-  console.log('Attempting to fetch players for teamId:', teamId);
-  try {
-    // Fetch players from the 'players' subcollection under the user's document
-    const playersCollectionRef = collection(db, 'users', teamId, 'players')
-    const q = query(playersCollectionRef)
-    console.log('Firestore query created:', q);
-    const querySnapshot = await getDocs(q)
-    console.log('Query snapshot received:', querySnapshot);
+// Function to subscribe to players for the logged-in team
+const subscribeToPlayers = (userId: string) => {
+  console.log('Attempting to subscribe to players for userId:', userId)
 
-    const fetchedPlayers: Player[] = []
-    querySnapshot.forEach((doc) => {
-      const data = doc.data()
-      console.log('Processing player document:', doc.id, data);
-      // Explicitly map data to Player type, ensuring all properties exist
-      // Note: 'number' and 'rating' were not generated in playerGenerator.ts,
-      // so we'll use 'overall' for rating and assign a default number for now.
-      if (data && typeof data.name === 'string' && typeof data.position === 'string' && typeof data.overall === 'number') {
-        fetchedPlayers.push({
-          id: doc.id,
-          name: data.name,
-          position: data.position,
-          number: fetchedPlayers.length + 1, // Assign a sequential number for display
-          rating: data.overall, // Use 'overall' from generated data
-          team: teamId // Use the teamId (user UID)
+  // Unsubscribe from previous listener if it exists
+  if (playersListener) {
+    console.log('Unsubscribing from previous players listener.')
+    playersListener()
+    playersListener = null
+  }
+
+  try {
+    const playersCollectionRef = collection(db, 'users', userId, 'players')
+    const q = query(playersCollectionRef)
+    console.log('Firestore query created for snapshot listener:', q)
+
+    playersListener = onSnapshot(
+      q,
+      async (querySnapshot) => {
+        console.log('Player snapshot received:', querySnapshot.size, 'docs')
+        // Fetch the user's team name (could be cached, but fetching ensures freshness)
+        const userDocRef = doc(db, 'users', userId)
+        const userDocSnap = await getDoc(userDocRef)
+        const teamName = userDocSnap.exists() ? userDocSnap.data().team : 'Unknown Team'
+        console.log('Fetched team name for snapshot:', teamName)
+
+        const fetchedPlayers: Player[] = []
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          console.log('Processing player document from snapshot:', doc.id, data)
+          // Check for essential fields, using 'rating' instead of 'overall'
+          if (
+            data &&
+            typeof data.name === 'string' &&
+            typeof data.position === 'string' &&
+            typeof data.rating === 'number'
+          ) {
+            fetchedPlayers.push({
+              id: doc.id,
+              name: data.name,
+              position: data.position,
+              number: data.number ?? fetchedPlayers.length + 1, // Use stored number if available, else sequential
+              rating: data.rating, // Use 'rating' field from Firestore data
+              team: data.team || teamName, // Use team from player data if available, else fallback
+            })
+          } else {
+            console.warn(
+              'Skipping player document with missing/incorrect data (expecting name, position, rating):',
+              doc.id,
+              data,
+            )
+          }
         })
-      } else {
-        console.warn('Skipping player document with missing or incorrect data:', doc.id, data)
-      }
-    })
-    console.log('Fetched players:', fetchedPlayers);
-    players.value = fetchedPlayers
+        console.log('Fetched players from snapshot:', fetchedPlayers.length)
+        players.value = fetchedPlayers
+      },
+      (error) => {
+        console.error('Error in players snapshot listener:', error)
+        players.value = [] // Clear players on error
+      },
+    )
   } catch (error) {
-    console.error('Error fetching players:', error)
+    console.error('Error setting up players subscription:', error)
     players.value = [] // Clear players on error
+    if (playersListener) {
+      playersListener() // Clean up listener if setup failed midway
+      playersListener = null
+    }
   }
 }
 
@@ -169,7 +233,7 @@ onMounted(() => {
     if (user) {
       // User is logged in, fetch players for their team
       // Assuming the team ID is the user's UID
-      fetchPlayers(user.uid)
+      subscribeToPlayers(user.uid) // Use the new subscription function
     } else {
       // User is logged out, clear players
       players.value = []
@@ -181,6 +245,12 @@ onMounted(() => {
 onUnmounted(() => {
   if (authListener) {
     authListener()
+  }
+  // Unsubscribe from players listener
+  if (playersListener) {
+    console.log('Unsubscribing from players listener on unmount.')
+    playersListener()
+    playersListener = null
   }
 })
 </script>
@@ -212,7 +282,8 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-.squad-section, .staff-section {
+.squad-section,
+.staff-section {
   background: rgba(45, 45, 45, 0.7);
   border-radius: 15px;
   padding: 25px;
@@ -240,7 +311,9 @@ onUnmounted(() => {
   padding: 20px;
   background: rgba(30, 30, 30, 0.5);
   border-radius: 10px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Remove .player-card:hover */
@@ -339,7 +412,50 @@ onUnmounted(() => {
   margin-top: 20px;
 }
 
-.btn-fire, .btn-sell {
+/* Style for the price input group */
+.price-input-group {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-input-group label {
+  font-weight: bold;
+  color: #a8b4ff;
+  font-size: 0.9em;
+}
+
+.price-input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  background-color: rgba(30, 30, 30, 0.8);
+  color: #e0e0e0;
+  font-size: 1em;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 8px rgba(100, 108, 255, 0.3);
+}
+
+/* Hide number input arrows */
+.price-input::-webkit-outer-spin-button,
+.price-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.price-input[type='number'] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.btn-fire,
+.btn-sell {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -357,11 +473,12 @@ onUnmounted(() => {
 }
 
 .btn-sell {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
   color: white;
 }
 
-.btn-fire:hover, .btn-sell:hover {
+.btn-fire:hover,
+.btn-sell:hover {
   transform: translateY(-2px);
   filter: brightness(110%);
 }
@@ -400,7 +517,8 @@ onUnmounted(() => {
   }
 }
 
-.player-table td:first-child { /* Style player number */
+.player-table td:first-child {
+  /* Style player number */
   font-weight: bold;
   color: #646cff;
   text-align: center;
