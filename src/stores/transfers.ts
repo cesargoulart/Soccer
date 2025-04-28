@@ -12,6 +12,8 @@ import {
   updateDoc,
   getDoc,
   setDoc,
+  writeBatch,
+  increment, // Import increment
 } from 'firebase/firestore' // Import Firestore functions
 import { db, auth } from '../firebaseConfig' // Import db instance and auth
 import { getAuth } from 'firebase/auth' // Import getAuth
@@ -177,10 +179,10 @@ export const useTransfersStore = defineStore('transfers', () => {
 
   // Buy a player from the transfer list
   const buyPlayer = async (player: Player, buyingTeamName: string) => {
-    // Ensure we have the necessary IDs before proceeding
-    if (!player.originalId || !player.sellerUserId) {
-      console.error('Cannot buy player: Missing originalId or sellerUserId.', player)
-      throw new Error('Player data is incomplete (missing originalId or sellerUserId).')
+    // Ensure we have the necessary IDs and price before proceeding
+    if (!player.originalId || !player.sellerUserId || player.price === undefined || player.price === null) {
+      console.error('Cannot buy player: Missing originalId, sellerUserId, or price.', player)
+      throw new Error('Player data is incomplete (missing originalId, sellerUserId, or price).')
     }
 
     const currentUser = getAuth().currentUser
@@ -192,6 +194,7 @@ export const useTransfersStore = defineStore('transfers', () => {
     const sellerUserId = player.sellerUserId
     const playerOriginalId = player.originalId
     const transferListItemId = player.id
+    const salePrice = player.price // Store price for clarity
 
     // Prevent buying own player (although UI should handle this)
     if (buyerUserId === sellerUserId) {
@@ -239,9 +242,37 @@ export const useTransfersStore = defineStore('transfers', () => {
         buyingTeamName,
       )
 
-      // TODO: Implement logic to update finances (deduct from buyer, add to seller)
+      // --- Update Both Economies ---
+      const batch = writeBatch(db);
+
+      // Set up seller update
+      const sellerEconomyRef = doc(db, 'users', sellerUserId, 'economy', 'current');
+      // First get current economy data for seller
+      const sellerEconomySnap = await getDoc(sellerEconomyRef);
+      const sellerCurrentVendasCompras = (sellerEconomySnap.data()?.vendasCompras || 0);
+      // Update seller's economy
+      batch.set(sellerEconomyRef, {
+        vendasCompras: sellerCurrentVendasCompras + salePrice
+      }, { merge: true });
+
+      // Set up buyer update
+      const buyerEconomyRef = doc(db, 'users', buyerUserId, 'economy', 'current');
+      // First get current economy data for buyer
+      const buyerEconomySnap = await getDoc(buyerEconomyRef);
+      const buyerCurrentVendasCompras = (buyerEconomySnap.data()?.vendasCompras || 0);
+      // Update buyer's economy
+      batch.set(buyerEconomyRef, {
+        vendasCompras: buyerCurrentVendasCompras - salePrice
+      }, { merge: true });
+
+      // Commit both updates atomically
+      await batch.commit();
+      console.log(`Transfer completed successfully:
+        Seller (${sellerUserId}) vendasCompras increased by ${salePrice}
+        Buyer (${buyerUserId}) vendasCompras decreased by ${salePrice}`);
+
     } catch (error) {
-      console.error('Error buying player:', error)
+      console.error('Error during player transfer process:', error)
       // Consider more robust error handling/rollback if needed
       throw error // Re-throw the error
     }

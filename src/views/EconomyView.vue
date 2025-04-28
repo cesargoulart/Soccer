@@ -1,46 +1,80 @@
 <template>
   <div class="economy-view">
     <h1>Economy</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Lucros</td>
-          <td>$150,000</td>
-        </tr>
-        <tr>
-          <td>Despesas</td>
-          <td>$80,000</td>
-        </tr>
-        <tr>
-          <td>Publicidade</td>
-          <td>$10,000</td>
-        </tr>
-        <tr>
-          <td>Vendas/Compras</td>
-          <td>$30,000</td>
-        </tr>
-        <tr>
-          <td>Staff</td>
-          <td>$40,000</td>
-        </tr>
-        <tr>
-          <td><strong>Total</strong></td>
-          <td><strong>$10,000</strong></td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-if="isLoading" class="loading-message">Loading economy data...</div>
+    <div v-else-if="error" class="error-message">{{ error }}</div>
+    <div v-else-if="economyData">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lucros</td>
+            <td>{{ formatCurrency(economyData.lucros) }}</td>
+          </tr>
+          <tr>
+            <td>Despesas</td>
+            <td>{{ formatCurrency(economyData.despesas) }}</td>
+          </tr>
+          <tr>
+            <td>Publicidade</td>
+            <td>{{ formatCurrency(economyData.publicidade) }}</td>
+          </tr>
+          <tr>
+            <td>Vendas/Compras</td>
+            <td>{{ formatCurrency(economyData.vendasCompras) }}</td>
+          </tr>
+          <tr>
+            <td>Staff</td>
+            <td>{{ formatCurrency(economyData.staff) }}</td>
+          </tr>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>{{ formatCurrency(calculateTotal(economyData)) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div v-else class="no-data-message">No economy data available.</div>
     <!-- Add economy related components and data here -->
   </div>
 </template>
 
 <script setup lang="ts">
-// Add any necessary script setup logic here
+import { computed } from 'vue';
+import { useEconomyStore, type EconomyData } from '@/stores/economy'; // Adjust path if needed
+
+const economyStore = useEconomyStore();
+
+const isLoading = computed(() => economyStore.isLoading);
+const error = computed(() => economyStore.error);
+const economyData = computed(() => economyStore.economyData);
+
+// Helper function to format currency
+const formatCurrency = (value: number | undefined | null): string => {
+  if (value === undefined || value === null) {
+    return '$0.00'; // Or some other placeholder like '-'
+  }
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
+
+// Helper function to calculate total (example calculation)
+const calculateTotal = (data: EconomyData): number => {
+  const lucros = data.lucros ?? 0;
+  const despesas = data.despesas ?? 0;
+  const publicidade = data.publicidade ?? 0;
+  const vendasCompras = data.vendasCompras ?? 0; // Include vendas/compras in total
+  const staff = data.staff ?? 0;
+
+  // Example: Total = Lucros + Vendas/Compras - Despesas - Publicidade - Staff
+  return lucros + vendasCompras - despesas - publicidade - staff;
+};
+
+// No need to explicitly call subscribe here, the store handles it based on auth state
 </script>
 
 <style scoped>
@@ -50,6 +84,16 @@
   background-color: #121212; /* Dark background */
   min-height: calc(100vh - 60px); /* Adjust based on header/footer height */
   animation: fadeIn 0.5s ease-in-out;
+}
+
+.loading-message, .error-message, .no-data-message {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 1.2em;
+}
+
+.error-message {
+  color: #ff6b6b; /* Red color for errors */
 }
 
 table {
