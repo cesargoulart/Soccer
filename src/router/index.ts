@@ -29,6 +29,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/jogos/calendario',
+      name: 'calendario',
+      component: () => import('../views/CalendarioCompleto.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/jogos/historico',
+      name: 'historico',
+      component: () => import('../views/HistoricoJogos.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/economy',
       name: 'economy',
       component: () => import('../views/EconomyView.vue'),
