@@ -1,24 +1,25 @@
 /* color palette from <https://github.com/vuejs/theme> */
 :root {
   --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  --vt-c-white-soft: #f0f0f0;
+  --vt-c-white-mute: #e0e0e0;
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
+  --vt-c-black: #121212;
+  --vt-c-black-soft: #1a1a1a;
+  --vt-c-black-mute: #202020;
 
-  --vt-c-indigo: #2c3e50;
+  --vt-c-indigo: #3f5efb;
+  --vt-c-purple: #8e2de2;
 
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
+  --vt-c-divider-light-1: rgba(75, 75, 75, 0.35);
+  --vt-c-divider-light-2: rgba(75, 75, 75, 0.15);
+  --vt-c-divider-dark-1: rgba(110, 110, 110, 0.75);
+  --vt-c-divider-dark-2: rgba(110, 110, 110, 0.55);
 
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+  --vt-c-text-light-1: #2c3e50;
+  --vt-c-text-light-2: rgba(45, 45, 45, 0.75);
+  --vt-c-text-dark-1: #f8f8f8;
+  --vt-c-text-dark-2: rgba(240, 240, 240, 0.72);
 }
 
 /* semantic color variables for this project */
@@ -56,6 +57,7 @@
   box-sizing: border-box;
   margin: 0;
   font-weight: normal;
+  transition: all 0.3s ease;
 }
 
 body {
@@ -63,11 +65,11 @@ body {
   color: var(--color-text);
   background: var(--color-background);
   transition:
-    color 0.5s,
-    background-color 0.5s;
+    background-color 0.8s ease,
+    color 0.8s ease;
   line-height: 1.6;
   font-family:
-    Inter,
+    'Inter',
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
@@ -83,4 +85,6 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, var(--vt-c-black) 0%, var(--vt-c-black-soft) 100%);
+  overflow-x: hidden;
 }

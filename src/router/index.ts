@@ -52,6 +52,13 @@ const router = createRouter({
       component: () => import('../views/TransfersView.vue'),
       meta: { requiresAuth: true }
     }
+,
+    {
+      path: '/jovens',
+      name: 'jovens',
+      component: () => import('../views/JovensView.vue'),
+      meta: { requiresAuth: true }
+    }
   ]
 })
 

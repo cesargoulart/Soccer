@@ -1,4 +1,4 @@
-import { doc, collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig'; // Assuming firebaseConfig is in src/
 
 interface Player {
@@ -31,7 +31,7 @@ function generateRandomOverall(): number {
 }
 
 // Function to generate a single random player
-function generateRandomPlayer(userId: string, playerNumber: number): Player {
+export function generateRandomPlayer(userId: string, playerNumber: number): Player {
   const overall = generateRandomOverall();
   return {
     name: generateRandomName(),
