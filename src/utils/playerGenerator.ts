@@ -1,7 +1,7 @@
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig'; // Assuming firebaseConfig is in src/
 
-interface Player {
+export interface Player { // Add export here
   name: string;
   position: string;
   overall: number;
