@@ -58,6 +58,12 @@ const router = createRouter({
       name: 'jovens',
       component: () => import('../views/JovensView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/jogos/:id',
+      name: 'detalhes-jogo',
+      component: () => import('../views/DetalhesJogoView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

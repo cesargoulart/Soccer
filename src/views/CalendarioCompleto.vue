@@ -43,7 +43,18 @@
                   <td>{{ fixture.date }}</td>
                   <td>{{ fixture.time }}</td>
                   <td class="team-name">{{ fixture.homeTeam }}</td>
-                  <td class="vs-cell">VS</td>
+                  <td class="vs-cell">
+                    <router-link
+                      :to="{
+                        name: 'detalhes-jogo',
+                        params: { id: fixture.id },
+                        query: { from: $route.fullPath }
+                      }"
+                      class="vs-link"
+                    >
+                      VS
+                    </router-link>
+                  </td>
                   <td class="team-name">{{ fixture.awayTeam }}</td>
                   <td>{{ fixture.competition }}</td>
                   <td>{{ fixture.stadium }}</td>
@@ -284,9 +295,23 @@ h2 {
 
 .fixtures-table .vs-cell {
   text-align: center;
+  padding: 12px 5px;
+}
+
+.vs-link {
+  display: inline-block;
   font-weight: bold;
   color: #646cff;
-  padding: 12px 5px;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.vs-link:hover {
+  background: rgba(100, 108, 255, 0.15);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(100, 108, 255, 0.3);
 }
 
 /* Animations */
