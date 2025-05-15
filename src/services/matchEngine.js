@@ -1,6 +1,6 @@
 // matchEngine.js - Serviço para simulação de partidas
 import { ref, onUnmounted } from 'vue';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 
 export class MatchEngine {
@@ -534,7 +534,6 @@ export const useMatchSimulation = (fixtureId) => {
       isSimulating.value = true;
     }
   };
-
 
   // Limpar recursos quando o componente for desmontado
   onUnmounted(() => {

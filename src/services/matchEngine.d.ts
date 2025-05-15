@@ -97,5 +97,11 @@ declare module '@/services/matchEngine' {
     on(eventName: 'matchEnd', callback: (data: MatchEndEvent) => void): this;
   }
 
+  export const commentaryPhrases: {
+    kickOff: string[];
+    goal: string[];
+    shot: string[];
+  };
+
   export const useMatchSimulation: (fixtureId: string) => MatchSimulationResult;
 }

@@ -21,7 +21,7 @@ function generateRandomName(): string {
 
 // Function to generate a random player position
 function generateRandomPosition(): string {
-  const positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
+  const positions = ['Goleiro', 'Defensor', 'Meio-campo', 'Atacante'];
   return positions[Math.floor(Math.random() * positions.length)];
 }
 

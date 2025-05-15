@@ -11,17 +11,18 @@
     <div v-if="isLoading" class="loading-indicator">Checking for weekly player...</div>
 
     <!-- Weekly Player Card -->
-    <div v-else-if="showPlayerCard" class="weekly-player"> <!-- Use v-else-if after loading -->
-      <h2>Weekly Player</h2>
+    <div v-else-if="showPlayerCard" class="weekly-player">
+      <h2>Jogador Jovem da Semana</h2>
       <div class="player-card"> <!-- No v-if needed here, showPlayerCard handles it -->
         <div class="player-info">
-          <h3>{{ player?.name }}</h3> <!-- Optional chaining for safety -->
-          <p>Position: {{ player?.position }}</p>
-          <p>Rating: {{ player?.rating }}</p>
+          <h3>{{ player?.name }}</h3>
+          <p>Posição: {{ player?.position }}</p>
+          <p>Potencial: {{ player?.rating }}</p>
+          <p class="warning">⚠️ Você só pode aceitar um jogador por semana!</p>
         </div>
         <div class="player-actions">
-          <button @click="acceptPlayer" class="btn accept" :disabled="isLoading">Accept</button>
-          <button @click="rejectPlayer" class="btn reject" :disabled="isLoading">Reject</button>
+          <button @click="acceptPlayer" class="btn accept" :disabled="isLoading">Aceitar Jogador</button>
+          <button @click="rejectPlayer" class="btn reject" :disabled="isLoading">Rejeitar Jogador</button>
         </div>
       </div>
     </div>
@@ -117,8 +118,12 @@ const showFallbackMessage = computed(() => {
 })
 
 const fallbackText = computed(() => {
-    if (!isSaturday()) return 'The Weekly Player feature is only available on Saturdays.';
-    if (actionTakenThisWeek.value) return 'You have already taken action on this week\'s player. Check back next Saturday!';
+    if (!isSaturday()) {
+        const nextSaturday = new Date();
+        nextSaturday.setDate(nextSaturday.getDate() + (6 - nextSaturday.getDay()));
+        return `Um novo jogador jovem estará disponível no próximo sábado (${nextSaturday.toLocaleDateString('pt-BR')}).`;
+    }
+    if (actionTakenThisWeek.value) return 'Você já tomou uma decisão sobre o jogador desta semana. Um novo jogador estará disponível no próximo sábado!';
     return ''; // Default empty
 })
 
@@ -261,6 +266,23 @@ function rejectPlayer() {
 
 .reject:hover {
   background-color: #e53935;
+}
+
+.warning {
+    color: #ffd700;
+    font-weight: bold;
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ffd700;
+    border-radius: 5px;
+    background-color: rgba(255, 215, 0, 0.1);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
 }
 
 /* New debug styles */

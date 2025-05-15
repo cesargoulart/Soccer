@@ -278,7 +278,7 @@ const getCommentIcon = (type: string) => {
     case 'kickOff':
     case 'halfTime':
     case 'fullTime':
-      return 'fas fa-whistle' // ou outro ícone para apito
+      return 'fas fa-whistle'
     case 'corner':
       return 'fas fa-flag-corner'
     case 'shot':
@@ -434,7 +434,7 @@ const getCommentColor = (type: string) => {
   flex: 1;
   text-align: center;
   font-size: 14px;
-  color: #a0a0a0;
+  color: #e1e1e1;
 }
 
 .stat-home-value, .stat-away-value {
@@ -472,15 +472,6 @@ const getCommentColor = (type: string) => {
 
 .stat-bar.away {
   background: linear-gradient(90deg, #FF4500, #FF6347);
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 5px rgba(100, 108, 255, 0.3);
-  }
-  100% {
-    box-shadow: 0 0 20px rgba(100, 108, 255, 0.6);
-  }
 }
 
 /* Seção de comentários */
@@ -542,6 +533,15 @@ const getCommentColor = (type: string) => {
   color: #e1e1e1;
   font-size: 15px;
   line-height: 1.4;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 5px rgba(100, 108, 255, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(100, 108, 255, 0.6);
+  }
 }
 
 @keyframes fadeInUp {
