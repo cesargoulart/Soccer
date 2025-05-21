@@ -1,11 +1,11 @@
 <template>
   <div>
     <!-- Debug info -->
-    <div v-if="debugMode" class="debug">
+    <!-- <div v-if="debugMode" class="debug">
       🔍 Debug: Today is Saturday? <strong>{{ isSaturday() ? 'Yes' : 'No' }}</strong> | Action Taken? <strong>{{ actionTakenThisWeek ? 'Yes' : 'No' }}</strong> | Loading? <strong>{{ isLoading ? 'Yes' : 'No' }}</strong>
       <br>
       🧪 Player Data: {{ player || 'N/A' }}
-    </div>
+    </div> -->
 
     <!-- Loading Indicator -->
     <div v-if="isLoading" class="loading-indicator">Checking for weekly player...</div>

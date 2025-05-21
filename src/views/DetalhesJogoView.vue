@@ -11,9 +11,7 @@
       <div class="jogo-card animate-slide-in">
         <div class="match-header">
           <div class="competition">{{ fixture?.competition }}</div>
-          <div class="date-time">
-            {{ fixture?.date }} - {{ fixture?.time }}
-          </div>
+          <div class="date-time">{{ fixture?.date }} - {{ fixture?.time }}</div>
         </div>
 
         <div class="teams-container">
@@ -36,13 +34,14 @@
         <!-- Controles da Partida -->
         <div class="match-controls">
           <button
+            v-if="!isMatchEnded"
             @click="isSimulating ? stopSimulation() : startSimulation()"
-            :class="{'btn-start': !isSimulating, 'btn-stop': isSimulating}"
+            :class="{ 'btn-start': !isSimulating, 'btn-stop': isSimulating }"
           >
             {{ isSimulating ? 'Parar Simulação' : 'Iniciar Partida' }}
           </button>
           <button
-            v-if="isSimulating || isPaused"
+            v-if="(isSimulating || isPaused) && !isMatchEnded"
             @click="togglePause()"
             class="btn-pause"
           >
@@ -52,7 +51,8 @@
 
         <!-- Cronômetro e Placar -->
         <div v-if="currentMinute > 0" class="match-live-info">
-          <div class="match-timer">{{ currentMinute > 0 ? currentMinute + "'" : "" }}
+          <div class="match-timer">
+            {{ currentMinute > 0 ? currentMinute + "'" : '' }}
             <span v-if="isPaused" class="paused-indicator">(Parado)</span>
           </div>
           <div class="live-score">
@@ -71,8 +71,8 @@
             <span class="stat-away-value">{{ matchStats.possession.away }}%</span>
           </div>
           <div class="stat-progress">
-            <div class="stat-bar home" :style="{width: matchStats.possession.home + '%'}"></div>
-            <div class="stat-bar away" :style="{width: matchStats.possession.away + '%'}"></div>
+            <div class="stat-bar home" :style="{ width: matchStats.possession.home + '%' }"></div>
+            <div class="stat-bar away" :style="{ width: matchStats.possession.away + '%' }"></div>
           </div>
 
           <div class="stat-row">
@@ -114,7 +114,10 @@
             <div v-for="comment in comments" :key="comment.id" class="timeline-item">
               <div class="timeline-marker">
                 <span class="minute">{{ comment.minute }}'</span>
-                <i :class="getCommentIcon(comment.type)" :style="{ color: getCommentColor(comment.type) }"></i>
+                <i
+                  :class="getCommentIcon(comment.type)"
+                  :style="{ color: getCommentColor(comment.type) }"
+                ></i>
               </div>
               <div class="timeline-content">
                 <p>{{ comment.text }}</p>
@@ -138,7 +141,19 @@ interface Comment {
   id: string
   text: string
   timestamp: Date
-  type: 'goal' | 'card' | 'substitution' | 'other' | 'kickOff' | 'shot' | 'save' | 'foul' | 'corner' | 'halfTime' | 'fullTime' | 'general'
+  type:
+    | 'goal'
+    | 'card'
+    | 'substitution'
+    | 'other'
+    | 'kickOff'
+    | 'shot'
+    | 'save'
+    | 'foul'
+    | 'corner'
+    | 'halfTime'
+    | 'fullTime'
+    | 'general'
   minute: number
 }
 
@@ -169,10 +184,15 @@ const {
   isSimulating,
   currentMinute,
   score,
-  matchStats
+  matchStats,
 } = useMatchSimulation(fixtureId.value)
 
 const isPaused = computed(() => !isSimulating.value && currentMinute.value > 0)
+
+// Add this computed property to check if the match has ended
+const isMatchEnded = computed(() => {
+  return comments.value.some((comment) => comment.type === 'fullTime')
+})
 
 // Iniciar simulação com dados dos times
 const startSimulation = async () => {
@@ -184,7 +204,7 @@ const startSimulation = async () => {
     stadium: fixture.value.stadium,
     attackRating: 75, // Você pode buscar esses valores do Firestore depois
     defenseRating: 70,
-    players: [] // Idealmente, buscar jogadores do time
+    players: [], // Idealmente, buscar jogadores do time
   }
 
   // Dados do time visitante
@@ -192,7 +212,7 @@ const startSimulation = async () => {
     name: fixture.value.awayTeam,
     attackRating: 73,
     defenseRating: 72,
-    players: []
+    players: [],
   }
 
   // Iniciar simulação com os times
@@ -232,7 +252,7 @@ onMounted(async () => {
           time: data.time,
           competition: data.competition,
           stadium: data.stadium,
-          matchDate: data.matchDate?.toDate() || new Date()
+          matchDate: data.matchDate?.toDate() || new Date(),
         }
       } else {
         console.log('Jogo não encontrado!')
@@ -258,10 +278,10 @@ const fetchComments = (fixtureId: string) => {
   const q = query(commentsRef, orderBy('minute', 'asc'))
 
   return onSnapshot(q, (snapshot) => {
-    comments.value = snapshot.docs.map(doc => ({
+    comments.value = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      timestamp: doc.data().timestamp?.toDate() || new Date()
+      timestamp: doc.data().timestamp?.toDate() || new Date(),
     })) as Comment[]
   })
 }
@@ -327,7 +347,9 @@ const getCommentColor = (type: string) => {
   margin: 20px 0;
 }
 
-.btn-start, .btn-stop, .btn-pause {
+.btn-start,
+.btn-stop,
+.btn-pause {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -338,7 +360,7 @@ const getCommentColor = (type: string) => {
 }
 
 .btn-start {
-  background: linear-gradient(135deg, #32CD32, #228B22);
+  background: linear-gradient(135deg, #32cd32, #228b22);
   color: white;
 }
 
@@ -348,7 +370,7 @@ const getCommentColor = (type: string) => {
 }
 
 .btn-stop {
-  background: linear-gradient(135deg, #FF4500, #FF6347);
+  background: linear-gradient(135deg, #ff4500, #ff6347);
   color: white;
 }
 
@@ -358,7 +380,7 @@ const getCommentColor = (type: string) => {
 }
 
 .btn-pause {
-  background: linear-gradient(135deg, #FFA500, #FF8C00);
+  background: linear-gradient(135deg, #ffa500, #ff8c00);
   color: white;
 }
 
@@ -380,13 +402,13 @@ const getCommentColor = (type: string) => {
 .match-timer {
   font-size: 24px;
   font-weight: bold;
-  color: #FFD700;
+  color: #ffd700;
   margin-bottom: 10px;
 }
 
 .paused-indicator {
   font-size: 18px;
-  color: #FF6347;
+  color: #ff6347;
   font-style: italic;
 }
 
@@ -403,7 +425,7 @@ const getCommentColor = (type: string) => {
   padding: 5px 15px;
   border-radius: 8px;
   font-weight: bold;
-  color: #FFD700;
+  color: #ffd700;
   min-width: 80px;
   text-align: center;
 }
@@ -437,7 +459,8 @@ const getCommentColor = (type: string) => {
   color: #e1e1e1;
 }
 
-.stat-home-value, .stat-away-value {
+.stat-home-value,
+.stat-away-value {
   width: 40px;
   text-align: center;
   font-weight: bold;
@@ -448,7 +471,7 @@ const getCommentColor = (type: string) => {
 }
 
 .stat-away-value {
-  color: #FF6347;
+  color: #ff6347;
 }
 
 .stat-progress {
@@ -456,7 +479,7 @@ const getCommentColor = (type: string) => {
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
-  background: #2A2A2A;
+  background: #2a2a2a;
   display: flex;
   margin-bottom: 15px;
 }
@@ -467,11 +490,11 @@ const getCommentColor = (type: string) => {
 }
 
 .stat-bar.home {
-  background: linear-gradient(90deg, #646cff, #8F8FFF);
+  background: linear-gradient(90deg, #646cff, #8f8fff);
 }
 
 .stat-bar.away {
-  background: linear-gradient(90deg, #FF4500, #FF6347);
+  background: linear-gradient(90deg, #ff4500, #ff6347);
 }
 
 /* Seção de comentários */
@@ -517,7 +540,7 @@ const getCommentColor = (type: string) => {
 .timeline-marker .minute {
   font-size: 14px;
   font-weight: bold;
-  color: #FFD700;
+  color: #ffd700;
 }
 
 .timeline-marker i {
