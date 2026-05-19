@@ -2,18 +2,104 @@
   <div class="clube-view">
     <h1 class="title">Clube</h1>
     <div class="content-wrapper">
-      <template v-if="clube">
+      <template v-if="loading"></template>
+      <template v-else-if="clube">
         <div class="info-card animate-slide-in">
-          <h2>{{ clube.nome }}</h2>
+          <div class="info-card-header">
+            <h2>{{ clube.nome }}</h2>
+            <button class="settings-btn" @click="openSettings" title="Definições">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Definições
+            </button>
+          </div>
           <div class="info-content">
             <div class="info-item">
-              <h3>Stadium</h3>
+              <h3>Estádio</h3>
               <p>{{ clube.stadium || 'N/A' }}</p>
             </div>
             <div class="info-item">
-              <h3>Region</h3>
+              <h3>Região</h3>
               <p>{{ clube.region || 'N/A' }}</p>
             </div>
+          </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div v-if="showSettings" class="modal-overlay" @click.self="closeSettings">
+          <div class="settings-modal">
+            <h3>Definições do Clube</h3>
+            <div class="settings-field">
+              <label>Nome do Estádio</label>
+              <input v-model="editStadium" type="text" placeholder="Nome do estádio" class="settings-input" />
+            </div>
+            <div class="settings-field">
+              <label>Região</label>
+              <div class="region-options">
+                <label class="region-option" :class="{ active: editRegion === 'Açores' }">
+                  <input type="radio" v-model="editRegion" value="Açores" hidden />
+                  Açores
+                </label>
+                <label class="region-option" :class="{ active: editRegion === 'Lisboa' }">
+                  <input type="radio" v-model="editRegion" value="Lisboa" hidden />
+                  Lisboa
+                </label>
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn-cancel" @click="closeSettings">Cancelar</button>
+              <button class="btn-save" :disabled="saving" @click="saveSettings">
+                {{ saving ? 'A guardar...' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estádio Section -->
+        <div class="table-card animate-slide-in">
+          <h2>Estádio</h2>
+          <div class="stadium-grid">
+            <!-- Capacity -->
+            <div class="stadium-item">
+              <div class="stadium-item-header">
+                <span class="stadium-item-label">Capacidade</span>
+                <span class="stadium-item-value">{{ stadiumData.capacidade.toLocaleString('pt-PT') }} lugares</span>
+              </div>
+              <div class="stadium-item-sub">Receita estimada/jogo em casa: {{ revenueEstimate }}</div>
+              <button
+                class="upgrade-btn"
+                :disabled="upgrading || !nextCapacidade || saldo < (nextCapacidade?.custo ?? 0)"
+                @click="upgradeCapacidade"
+              >
+                <span v-if="!nextCapacidade">Máximo atingido</span>
+                <span v-else-if="saldo < nextCapacidade.custo">Fundos insuficientes</span>
+                <span v-else>Expandir → {{ nextCapacidade.lugares.toLocaleString('pt-PT') }} lugares (€{{ nextCapacidade.custo.toLocaleString('pt-PT') }})</span>
+              </button>
+            </div>
+            <!-- Facilities -->
+            <div v-for="inst in instalacoes" :key="inst.key" class="stadium-item">
+              <div class="stadium-item-header">
+                <span class="stadium-item-label">{{ inst.label }}</span>
+                <div class="level-dots">
+                  <span v-for="n in 3" :key="n" class="level-dot" :class="{ filled: n <= (stadiumData.instalacoes[inst.key] ?? 1) }"></span>
+                </div>
+              </div>
+              <div class="stadium-item-sub">{{ inst.desc[stadiumData.instalacoes[inst.key] ?? 1] }}</div>
+              <button
+                class="upgrade-btn"
+                :disabled="upgrading || (stadiumData.instalacoes[inst.key] ?? 1) >= 3 || saldo < inst.custo[(stadiumData.instalacoes[inst.key] ?? 1)]"
+                @click="upgradeInstalacao(inst.key)"
+              >
+                <span v-if="(stadiumData.instalacoes[inst.key] ?? 1) >= 3">Nível máximo</span>
+                <span v-else-if="saldo < inst.custo[(stadiumData.instalacoes[inst.key] ?? 1)]">Fundos insuficientes</span>
+                <span v-else>Melhorar (€{{ inst.custo[(stadiumData.instalacoes[inst.key] ?? 1)].toLocaleString('pt-PT') }})</span>
+              </button>
+            </div>
+          </div>
+          <div class="saldo-row">
+            <span>Saldo disponível:</span>
+            <span class="saldo-value">€{{ saldo.toLocaleString('pt-PT') }}</span>
           </div>
         </div>
 
@@ -48,20 +134,6 @@
           </table>
         </div>
 
-        <!-- Player Data Section -->
-        <div v-if="selectedTeam" class="player-card animate-slide-in">
-          <h2>Players for {{ selectedTeam.name }}</h2>
-          <div class="player-list">
-            <div v-for="player in selectedTeamPlayers" :key="player.id" class="player-item">
-              <p>{{ player.name }} ({{ player.position }})</p>
-              <div class="player-actions">
-                <button class="fire-button">Fire</button>
-                <button class="sell-button">Sell</button>
-              </div>
-            </div>
-            <p v-if="selectedTeamPlayers.length === 0">No players found for this team.</p>
-          </div>
-        </div>
       </template>
       <template v-else>
         <AddClube @clube-added="handleClubeAdded"></AddClube>
@@ -71,8 +143,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'; // Removed Timestamp
+import { ref, onMounted, computed } from 'vue';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import AddClube from '@/components/AddClube.vue';
@@ -136,6 +208,177 @@ const fictionalTeamNames = [
 const LEAGUE_SIZE = 8; // Consistent league size
 
 const clube = ref<Clube | null>(null);
+const loading = ref(true);
+
+// Settings modal
+const showSettings = ref(false)
+const editStadium = ref('')
+const editRegion = ref('')
+const saving = ref(false)
+
+// Stadium
+interface StadiumInstall {
+  relvado: number
+  balnearios: number
+  bilheteira: number
+}
+interface StadiumData {
+  capacidade: number
+  instalacoes: StadiumInstall
+}
+
+const stadiumData = ref<StadiumData>({
+  capacidade: 5000,
+  instalacoes: { relvado: 1, balnearios: 1, bilheteira: 1 }
+})
+const upgrading = ref(false)
+const saldo = ref(0)
+
+const capacityLevels = [
+  { lugares: 5000,  custo: 0 },
+  { lugares: 10000, custo: 25000 },
+  { lugares: 20000, custo: 75000 },
+  { lugares: 35000, custo: 150000 },
+  { lugares: 50000, custo: 300000 },
+]
+
+const nextCapacidade = computed(() => {
+  const idx = capacityLevels.findIndex(l => l.lugares === stadiumData.value.capacidade)
+  if (idx === -1 || idx >= capacityLevels.length - 1) return null
+  return capacityLevels[idx + 1]
+})
+
+const revenueEstimate = computed(() => {
+  const cap = stadiumData.value.capacidade
+  const ticketPrice = [8, 12, 18][stadiumData.value.instalacoes.bilheteira - 1]
+  const occupancy  = [0.65, 0.70, 0.75][stadiumData.value.instalacoes.relvado - 1]
+  const revenue = Math.round(cap * occupancy * ticketPrice)
+  return '€' + revenue.toLocaleString('pt-PT')
+})
+
+const instalacoes = [
+  {
+    key: 'relvado' as const,
+    label: 'Relvado',
+    desc: ['', 'Relvado básico', 'Relvado sintético', 'Relvado profissional'],
+    custo: [0, 30000, 80000],
+  },
+  {
+    key: 'balnearios' as const,
+    label: 'Balneários',
+    desc: ['', 'Balneários simples', 'Balneários modernos', 'Balneários premium'],
+    custo: [0, 20000, 50000],
+  },
+  {
+    key: 'bilheteira' as const,
+    label: 'Bilheteira',
+    desc: ['', 'Bilheteira manual', 'Bilheteira digital', 'Bilheteira premium'],
+    custo: [0, 40000, 100000],
+  },
+]
+
+async function loadStadiumData() {
+  if (!clube.value || clube.value.id === 'temp-id') return
+  const snap = await getDoc(doc(db, 'clubes', clube.value.id))
+  if (snap.exists()) {
+    const d = snap.data()
+    stadiumData.value = {
+      capacidade: d.capacidade ?? 5000,
+      instalacoes: {
+        relvado:    d.instalacoes?.relvado    ?? 1,
+        balnearios: d.instalacoes?.balnearios ?? 1,
+        bilheteira: d.instalacoes?.bilheteira ?? 1,
+      }
+    }
+  }
+}
+
+async function loadSaldo() {
+  const user = getAuth().currentUser
+  if (!user) return
+  const snap = await getDoc(doc(db, 'users', user.uid, 'economy', 'current'))
+  if (snap.exists()) {
+    saldo.value = snap.data().lucros ?? 0
+  }
+}
+
+async function upgradeCapacidade() {
+  if (!clube.value || clube.value.id === 'temp-id' || !nextCapacidade.value) return
+  const custo = nextCapacidade.value.custo
+  if (saldo.value < custo) return
+  const user = getAuth().currentUser
+  if (!user) return
+  upgrading.value = true
+  try {
+    const novaCapacidade = nextCapacidade.value.lugares
+    await updateDoc(doc(db, 'clubes', clube.value.id), { capacidade: novaCapacidade })
+    await updateDoc(doc(db, 'users', user.uid, 'economy', 'current'), { lucros: saldo.value - custo })
+    stadiumData.value.capacidade = novaCapacidade
+    saldo.value -= custo
+  } finally {
+    upgrading.value = false
+  }
+}
+
+async function upgradeInstalacao(key: 'relvado' | 'balnearios' | 'bilheteira') {
+  if (!clube.value || clube.value.id === 'temp-id') return
+  const currentLevel = stadiumData.value.instalacoes[key]
+  if (currentLevel >= 3) return
+  const inst = instalacoes.find(i => i.key === key)
+  if (!inst) return
+  const custo = inst.custo[currentLevel]
+  if (saldo.value < custo) return
+  const user = getAuth().currentUser
+  if (!user) return
+  upgrading.value = true
+  try {
+    const novoNivel = currentLevel + 1
+    await updateDoc(doc(db, 'clubes', clube.value.id), { [`instalacoes.${key}`]: novoNivel })
+    await updateDoc(doc(db, 'users', user.uid, 'economy', 'current'), { lucros: saldo.value - custo })
+    stadiumData.value.instalacoes[key] = novoNivel
+    saldo.value -= custo
+  } finally {
+    upgrading.value = false
+  }
+}
+
+function openSettings() {
+  editStadium.value = clube.value?.stadium || ''
+  editRegion.value = clube.value?.region || ''
+  showSettings.value = true
+}
+
+function closeSettings() {
+  showSettings.value = false
+}
+
+async function saveSettings() {
+  if (!clube.value) return
+  saving.value = true
+  try {
+    if (clube.value.id === 'temp-id') {
+      // Clube not yet in Firestore — create it
+      const docRef = await addDoc(collection(db, 'clubes'), {
+        nome: clube.value.nome,
+        userId: clube.value.userId,
+        createdAt: Timestamp.fromDate(clube.value.createdAt),
+        stadium: editStadium.value,
+        region: editRegion.value,
+      })
+      clube.value.id = docRef.id
+    } else {
+      await updateDoc(doc(db, 'clubes', clube.value.id), {
+        stadium: editStadium.value,
+        region: editRegion.value,
+      })
+    }
+    clube.value.stadium = editStadium.value
+    clube.value.region = editRegion.value
+    closeSettings()
+  } finally {
+    saving.value = false
+  }
+}
 
 const selectTeam = async (team: LeagueTeam) => {
   selectedTeam.value = team
@@ -404,11 +647,13 @@ const handleClubeAdded = async (newClube: Clube) => {
 }
 
 onMounted(async () => {
-  console.log('ClubeView mounted')
   const auth = getAuth()
   console.log('Auth current user:', auth.currentUser)
-  await fetchUserClubeData() // Fetch user's club based on registered team
-  await fetchAllClubeData() // Fetch all clubs for the league table
+  await fetchUserClubeData()
+  await fetchAllClubeData()
+  await loadStadiumData()
+  await loadSaldo()
+  loading.value = false
 })
 </script>
 
@@ -474,6 +719,174 @@ onMounted(async () => {
 
 .info-card {
   animation: slideIn 0.8s ease forwards;
+}
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+  position: relative;
+  z-index: 1;
+}
+
+.info-card-header h2 {
+  margin-bottom: 0;
+}
+
+.settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: rgba(100, 108, 255, 0.12);
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 20px;
+  color: #a8b4ff;
+  font-size: 0.82em;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+
+.settings-btn:hover {
+  background: rgba(100, 108, 255, 0.25);
+  border-color: rgba(168, 180, 255, 0.5);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(100, 108, 255, 0.2);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.settings-modal {
+  background: #1e1a2e;
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 20px;
+  padding: 32px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.25s ease forwards;
+}
+
+.settings-modal h3 {
+  font-size: 1.3em;
+  color: #a8b4ff;
+  margin-bottom: 28px;
+}
+
+.settings-field {
+  margin-bottom: 22px;
+}
+
+.settings-field label {
+  display: block;
+  font-size: 0.82em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 10px;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(100, 108, 255, 0.25);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95em;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.settings-input:focus {
+  border-color: rgba(100, 108, 255, 0.6);
+}
+
+.region-options {
+  display: flex;
+  gap: 12px;
+}
+
+.region-option {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(100, 108, 255, 0.25);
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: all 0.2s;
+}
+
+.region-option.active {
+  background: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.6);
+  color: #fff;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+  border-color: rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+.btn-save {
+  flex: 2;
+  padding: 10px;
+  background: rgba(100, 108, 255, 0.25);
+  border: 1px solid rgba(100, 108, 255, 0.5);
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: rgba(100, 108, 255, 0.4);
+  box-shadow: 0 0 16px rgba(100, 108, 255, 0.3);
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .table-card {
@@ -752,5 +1165,117 @@ h3 {
   100% {
     transform: translate(-25%, -25%);
   }
+}
+
+/* Stadium */
+.stadium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.stadium-item {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(100,108,255,0.2);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.stadium-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stadium-item-label {
+  font-size: 0.78em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.4);
+}
+
+.stadium-item-value {
+  font-size: 0.95em;
+  font-weight: 700;
+  color: #fff;
+}
+
+.stadium-item-sub {
+  font-size: 0.76em;
+  color: rgba(255,255,255,0.35);
+  min-height: 1em;
+}
+
+.level-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.level-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(100,108,255,0.35);
+  background: transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.level-dot.filled {
+  background: var(--vt-c-indigo);
+  border-color: var(--vt-c-indigo);
+  box-shadow: 0 0 6px rgba(100,108,255,0.5);
+}
+
+.upgrade-btn {
+  width: 100%;
+  padding: 9px 12px;
+  background: rgba(100,108,255,0.1);
+  border: 1px solid rgba(100,108,255,0.3);
+  border-radius: 9px;
+  color: #a8b4ff;
+  font-size: 0.78em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: auto;
+}
+
+.upgrade-btn:hover:not(:disabled) {
+  background: rgba(100,108,255,0.22);
+  border-color: rgba(168,180,255,0.5);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(100,108,255,0.2);
+}
+
+.upgrade-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.saldo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: 0.88em;
+  color: rgba(255,255,255,0.45);
+  position: relative;
+  z-index: 1;
+}
+
+.saldo-value {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: #81c784;
 }
 </style>

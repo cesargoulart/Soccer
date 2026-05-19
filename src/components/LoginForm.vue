@@ -15,32 +15,40 @@
   
   <script setup lang="ts">
   import { ref } from 'vue';
-  // import { useRouter } from 'vue-router'; // No longer needed
-  import { auth } from '@/firebaseConfig';
+  import { auth, db } from '@/firebaseConfig';
   import { signInWithEmailAndPassword } from 'firebase/auth';
+  import { collection, query, where, getDocs } from 'firebase/firestore';
 
   const emailOrUsername = ref('');
   const password = ref('');
   const errorMessage = ref('');
-  // const router = useRouter(); // No longer needed
 
-  // Define emits
   const emit = defineEmits(['login-success']);
 
+  const resolveEmail = async (input: string): Promise<string | null> => {
+    if (input.includes('@')) return input;
+    const q = query(collection(db, 'users'), where('username', '==', input));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    return snapshot.docs[0].data().email as string;
+  };
+
   const handleLogin = async () => {
-    errorMessage.value = ''; // Clear previous errors
-  
-    // Basic validation (can be expanded)
+    errorMessage.value = '';
+
     if (!emailOrUsername.value || !password.value) {
       errorMessage.value = 'Please fill in all fields.';
       return;
     }
-  
+
     try {
-      await signInWithEmailAndPassword(auth, emailOrUsername.value, password.value);
-      // Emit success event instead of redirecting
+      const email = await resolveEmail(emailOrUsername.value);
+      if (!email) {
+        errorMessage.value = 'Invalid credentials. Please try again.';
+        return;
+      }
+      await signInWithEmailAndPassword(auth, email, password.value);
       emit('login-success');
-      // AuthView's onAuthStateChanged will handle the UI update
     } catch (error) {
       errorMessage.value = 'Invalid credentials. Please try again.';
     }

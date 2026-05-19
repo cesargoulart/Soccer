@@ -14,14 +14,19 @@
       </router-link>
     </div>
 
+    <SaturdayCountdown />
+
     <div class="content-wrapper">
       <!-- Upcoming Matches Section -->
       <div class="matches-section animate-slide-in">
         <div class="section-header">
           <h2>Próximos Jogos</h2>
-          <router-link to="/jogos/calendario" class="view-all-link">
+          <button v-if="!showAllUpcoming" class="view-all-link" @click="showAllUpcoming = true">
             Ver todos <span class="arrow">→</span>
-          </router-link>
+          </button>
+          <button v-else class="view-all-link my-only" @click="showAllUpcoming = false">
+            <span class="arrow">←</span> Só os meus
+          </button>
         </div>
 
         <div v-if="Object.keys(nextTwoWeeksFixtures).length > 0">
@@ -68,9 +73,12 @@
       <div class="results-section animate-slide-in" style="animation-delay: 0.2s">
         <div class="section-header">
           <h2>Últimos Resultados</h2>
-          <router-link to="/jogos/historico" class="view-all-link">
+          <button v-if="!showAllResults" class="view-all-link" @click="showAllResults = true">
             Ver todos <span class="arrow">→</span>
-          </router-link>
+          </button>
+          <button v-else class="view-all-link my-only" @click="showAllResults = false">
+            <span class="arrow">←</span> Só os meus
+          </button>
         </div>
 
         <div v-if="latestResults.length > 0" class="matches-grid">
@@ -110,8 +118,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { collection, getDocs, addDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, setDoc, query, where, Timestamp } from 'firebase/firestore'
 import { db } from '@/firebaseConfig'
+import { getAuth } from 'firebase/auth'
+import SaturdayCountdown from '@/components/SaturdayCountdown.vue'
 
 // Interfaces separadas para jogos futuros e completados
 interface UpcomingFixture {
@@ -144,13 +154,157 @@ const completedFixtures = ref<CompletedFixture[]>([])
 const leagueTeams = ref<string[]>([])
 const loadingMessage = ref('A carregar equipas...')
 const LEAGUE_SIZE = 8
+const userTeam = ref<string | null>(null)
+const showAllUpcoming = ref(false)
+const showAllResults = ref(false)
+
+interface UserTactic {
+  formacao: string
+  estilo: string
+}
+
+interface UserStadiumData {
+  clubeId: string
+  capacidade: number
+  instalacoes: { relvado: number; balnearios: number; bilheteira: number }
+}
+
+const userTactic = ref<UserTactic | null>(null)
+const userStadiumData = ref<UserStadiumData | null>(null)
+
+const fetchUserTeam = async () => {
+  const user = getAuth().currentUser
+  if (!user) return
+  const snap = await getDoc(doc(db, 'users', user.uid))
+  if (snap.exists()) {
+    userTeam.value = snap.data().team ?? null
+    if (snap.data().tatica) userTactic.value = snap.data().tatica
+  }
+}
+
+const loadUserStadium = async () => {
+  if (!userTeam.value) return
+  const q = query(collection(db, 'clubes'), where('nome', '==', userTeam.value))
+  const qSnap = await getDocs(q)
+  if (!qSnap.empty) {
+    const d = qSnap.docs[0].data()
+    userStadiumData.value = {
+      clubeId: qSnap.docs[0].id,
+      capacidade: d.capacidade ?? 5000,
+      instalacoes: {
+        relvado:    d.instalacoes?.relvado    ?? 1,
+        balnearios: d.instalacoes?.balnearios ?? 1,
+        bilheteira: d.instalacoes?.bilheteira ?? 1,
+      }
+    }
+  }
+}
+
+function simulateUserMatch(isHome: boolean): { homeScore: number; awayScore: number } {
+  const formacao = userTactic.value?.formacao ?? '4-4-2'
+  const estilo   = userTactic.value?.estilo   ?? 'Equilíbrio'
+
+  let winProb  = isHome ? 0.45 : 0.30
+  let drawProb = 0.25
+
+  if (formacao === '4-3-3')   { winProb += 0.08; drawProb -= 0.04 }
+  else if (formacao === '5-3-2')   { winProb -= 0.10; drawProb += 0.12 }
+  else if (formacao === '3-5-2')   { drawProb += 0.05 }
+  else if (formacao === '4-2-3-1') { winProb += 0.05 }
+
+  if (estilo === 'Contra-ataque') { winProb += isHome ? 0.08 : 0.05; drawProb -= 0.04 }
+  else if (estilo === 'Pressão Alta') { winProb += 0.12; drawProb -= 0.06 }
+  else if (estilo === 'Posse')       { drawProb += 0.08; winProb  -= 0.04 }
+
+  winProb  = Math.max(0.05, Math.min(0.78, winProb))
+  drawProb = Math.max(0.05, Math.min(0.40, drawProb))
+  const lossProb = Math.max(0.05, 1 - winProb - drawProb)
+  const total = winProb + drawProb + lossProb
+  const nw = winProb / total
+  const nd = drawProb / total
+
+  const r = Math.random()
+  const result = r < nw ? 'win' : r < nw + nd ? 'draw' : 'loss'
+
+  const pick = () => {
+    const dist = [0, 1, 1, 2, 2, 2, 3, 3, 4]
+    return dist[Math.floor(Math.random() * dist.length)]
+  }
+
+  let userScore: number, oppScore: number
+  if (result === 'win') {
+    oppScore  = pick()
+    userScore = oppScore + 1 + Math.floor(Math.random() * 2)
+  } else if (result === 'draw') {
+    userScore = pick()
+    oppScore  = userScore
+  } else {
+    userScore = pick()
+    oppScore  = userScore + 1 + Math.floor(Math.random() * 2)
+  }
+
+  return isHome
+    ? { homeScore: userScore, awayScore: oppScore }
+    : { homeScore: oppScore, awayScore: userScore }
+}
+
+async function addMatchdayRevenue() {
+  if (!userStadiumData.value) return
+  const user = getAuth().currentUser
+  if (!user) return
+  const { capacidade, instalacoes } = userStadiumData.value
+  const ticketPrice = [8, 12, 18][instalacoes.bilheteira - 1]
+  const occupancy   = [0.65, 0.70, 0.75][instalacoes.relvado - 1]
+  const revenue     = Math.round(capacidade * occupancy * ticketPrice)
+  const econDoc = doc(db, 'users', user.uid, 'economy', 'current')
+  const econSnap = await getDoc(econDoc)
+  const current  = econSnap.exists() ? (econSnap.data().lucros ?? 0) : 0
+  await setDoc(econDoc, { lucros: current + revenue }, { merge: true })
+}
+
+async function applyTrainingEffects() {
+  if (new Date().getDay() !== 6) return
+  const user = getAuth().currentUser
+  if (!user) return
+  const userSnap = await getDoc(doc(db, 'users', user.uid))
+  if (!userSnap.exists()) return
+  const treino = userSnap.data().treino
+  if (!treino || treino.aplicado || !treino.foco) return
+
+  const foco = treino.foco as string
+  const playersSnap = await getDocs(collection(db, 'users', user.uid, 'players'))
+  const updates: Promise<void>[] = []
+  playersSnap.docs.forEach(playerDoc => {
+    const data = playerDoc.data()
+    const pos: string = data.position ?? ''
+    let bonus = 0
+    if (foco === 'Físico' || foco === 'Descanso') {
+      bonus = 1
+    } else if (foco === 'Técnico') {
+      if (/Avançado|Médio|Atacante/i.test(pos)) bonus = 2
+    } else if (foco === 'Tático') {
+      if (/Defesa|Guarda-redes/i.test(pos)) bonus = 2
+    }
+    if (bonus > 0) {
+      const newRating = Math.min(99, (data.rating ?? 70) + bonus)
+      updates.push(updateDoc(doc(db, 'users', user.uid, 'players', playerDoc.id), { rating: newRating }))
+    }
+  })
+  await Promise.all(updates)
+  await updateDoc(doc(db, 'users', user.uid), { 'treino.aplicado': true })
+}
 
 // Número de resultados a mostrar na página principal
 const MAX_RESULTS_TO_SHOW = 6
 
-// Computed para obter apenas os resultados mais recentes
+// Computed para obter apenas os resultados mais recentes (filtrados pela equipa do utilizador)
 const latestResults = computed(() => {
-  return completedFixtures.value.slice(0, MAX_RESULTS_TO_SHOW)
+  const fixtures = (showAllResults.value || !userTeam.value)
+    ? completedFixtures.value
+    : completedFixtures.value.filter(
+        f => f.homeTeam === userTeam.value || f.awayTeam === userTeam.value
+      )
+  return fixtures.slice(0, MAX_RESULTS_TO_SHOW)
 })
 
 // Fictional teams list (names only)
@@ -314,39 +468,41 @@ const checkForCompletedMatches = async () => {
   // Atualizar os jogos futuros
   upcomingFixtures.value = remainingMatches
 
+  let userPlayedHome = false
+
   // Para cada jogo concluído, criar um resultado e salvar no Firestore
   for (const match of completedMatches) {
-    const homeScore = Math.floor(Math.random() * 5)
-    const awayScore = Math.floor(Math.random() * 5)
+    const isUserHome = match.homeTeam === userTeam.value
+    const isUserAway = match.awayTeam === userTeam.value
+    const isUserMatch = isUserHome || isUserAway
 
-    const completedMatch: CompletedFixture = {
-      ...match,
-      homeScore,
-      awayScore
-    }
+    const scores = isUserMatch
+      ? simulateUserMatch(isUserHome)
+      : { homeScore: Math.floor(Math.random() * 5), awayScore: Math.floor(Math.random() * 5) }
+
+    if (isUserHome) userPlayedHome = true
+
+    const completedMatch: CompletedFixture = { ...match, ...scores }
 
     try {
-      // Adicionar o resultado à coleção de jogos completados
       const docRef = await addDoc(collection(db, 'completedFixtures'), {
         ...completedMatch,
         matchDate: Timestamp.fromDate(completedMatch.matchDate)
       })
-
-      // Adicionar o ID do documento
       completedMatch.id = docRef.id
-
-      // Se tiver o ID do jogo no Firestore, remover da coleção de jogos futuros
       if (match.id) {
         await deleteDoc(doc(db, 'upcomingFixtures', match.id))
       }
-
       console.log(`Moved completed match to history: ${match.homeTeam} vs ${match.awayTeam}`)
     } catch (error) {
       console.error('Error saving match result:', error)
     }
 
-    // Adicionar à lista local
     completedFixtures.value.unshift(completedMatch)
+  }
+
+  if (userPlayedHome) {
+    await addMatchdayRevenue()
   }
 }
 
@@ -373,15 +529,17 @@ const generateFixtures = async () => {
   const numTeams = teamsToSchedule.length
   const numRounds = numTeams - 1
   const matchesPerRound = numTeams / 2
-  const baseDate = new Date(2025, 3, 20) // Start date: April 20, 2025 (Month is 0-indexed)
+  // Calculate next upcoming Saturday from today
+  const todayForFixtures = new Date()
+  todayForFixtures.setHours(0, 0, 0, 0)
+  const daysUntilSat = (6 - todayForFixtures.getDay() + 7) % 7
+  const firstSaturday = new Date(todayForFixtures)
+  firstSaturday.setDate(todayForFixtures.getDate() + daysUntilSat)
 
   // Create team rotation arrays
   const teamIndices = Array.from(Array(numTeams).keys())
 
   for (let round = 0; round < numRounds; round++) {
-    const roundDate = new Date(baseDate)
-    roundDate.setDate(baseDate.getDate() + round * 7) // Advance by one week per round
-
     for (let match = 0; match < matchesPerRound; match++) {
       const homeIndex = teamIndices[match]
       const awayIndex = teamIndices[numTeams - 1 - match]
@@ -394,9 +552,8 @@ const generateFixtures = async () => {
         continue
       }
 
-      // Determine actual match date (e.g., Saturday of the round week)
-      const matchDate = new Date(roundDate)
-      matchDate.setDate(roundDate.getDate() + 6) // Set to Saturday
+      const matchDate = new Date(firstSaturday)
+      matchDate.setDate(firstSaturday.getDate() + round * 7)
 
       // Alternate times
       const matchTime = match % 2 === 0 ? '18:00' : '20:30'
@@ -463,7 +620,7 @@ const generateFixtures = async () => {
     loadingMessage.value = 'Calendário gerado sem jogos (verificar equipas).'
   } else if (generated.length > 0) {
     loadingMessage.value = ''
-  }https://typescript-eslint.io/rules/no-unused-vars
+  }
 
   console.log('Fixtures generated:', upcomingFixtures.value.length)
 }
@@ -506,7 +663,11 @@ const nextTwoWeeksFixtures = computed(() => {
 
   // Filtrar para partidas nas próximas duas semanas
   const relevantFixtures = upcomingFixtures.value.filter(fixture => {
-    return fixture.matchDate >= now && fixture.matchDate <= twoWeeksLater
+    const inRange = fixture.matchDate >= now && fixture.matchDate <= twoWeeksLater
+    const isMyTeam = showAllUpcoming.value || !userTeam.value ||
+      fixture.homeTeam === userTeam.value ||
+      fixture.awayTeam === userTeam.value
+    return inRange && isMyTeam
   })
 
   // Agrupar por semana, como no groupedUpcomingFixtures
@@ -540,20 +701,43 @@ const nextTwoWeeksFixtures = computed(() => {
 
 // Inicialização
 onMounted(async () => {
+  await fetchUserTeam()
+  await loadUserStadium()
   await fetchLeagueTeams()
   await fetchUpcomingFixtures()
   await fetchCompletedFixtures()
 
-  // Se não houver jogos futuros, gerar alguns
+  // Clear and regenerate fixtures if: non-Saturday dates exist, OR a registered team is missing
+  if (upcomingFixtures.value.length > 0) {
+    const hasNonSaturdayFixtures = upcomingFixtures.value.some(
+      f => new Date(f.matchDate).getDay() !== 6
+    )
+
+    const teamsInFixtures = new Set([
+      ...upcomingFixtures.value.map(f => f.homeTeam),
+      ...upcomingFixtures.value.map(f => f.awayTeam),
+    ])
+    const registeredTeams = leagueTeams.value.filter(t => !fictionalTeamNames.includes(t))
+    const hasNewRegisteredTeam = registeredTeams.some(t => !teamsInFixtures.has(t))
+
+    if (hasNonSaturdayFixtures || hasNewRegisteredTeam) {
+      console.log('Clearing and regenerating fixtures (teams changed or non-Saturday dates)...')
+      for (const fixture of upcomingFixtures.value) {
+        if (fixture.id) {
+          await deleteDoc(doc(db, 'upcomingFixtures', fixture.id))
+        }
+      }
+      upcomingFixtures.value = []
+    }
+  }
+
   if (upcomingFixtures.value.length === 0) {
     await generateFixtures()
   }
 
-  // Verificar se há jogos que já foram realizados
+  await applyTrainingEffects()
   await checkForCompletedMatches()
-
-  // Verificar periodicamente para atualizar resultados em tempo real
-  setInterval(checkForCompletedMatches, 60000) // Verificar a cada minuto
+  setInterval(checkForCompletedMatches, 60000)
 })
 </script>
 
@@ -601,26 +785,55 @@ onMounted(async () => {
 }
 
 .view-all-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  color: #646cff;
+  gap: 6px;
+  padding: 7px 16px;
+  background: rgba(100, 108, 255, 0.12);
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 20px;
+  color: #a8b4ff;
   text-decoration: none;
-  font-size: 0.95em;
-  transition: all 0.3s ease;
+  font-size: 0.82em;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s ease;
 }
 
 .view-all-link:hover {
-  color: #a8b4ff;
-  transform: translateX(3px);
+  background: rgba(100, 108, 255, 0.25);
+  border-color: rgba(168, 180, 255, 0.5);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(100, 108, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .view-all-link .arrow {
-  margin-left: 5px;
-  transition: transform 0.3s ease;
+  font-style: normal;
+  transition: transform 0.25s ease;
 }
 
 .view-all-link:hover .arrow {
   transform: translateX(3px);
+}
+
+.view-all-link.my-only {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+}
+
+.view-all-link.my-only:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: rgba(192, 132, 252, 0.55);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
+}
+
+.view-all-link.my-only:hover .arrow {
+  transform: translateX(-3px);
 }
 
 /* Estilos existentes */

@@ -57,9 +57,9 @@ const economyData = computed(() => economyStore.economyData);
 // Helper function to format currency
 const formatCurrency = (value: number | undefined | null): string => {
   if (value === undefined || value === null) {
-    return '$0.00'; // Or some other placeholder like '-'
+    return '€0,00';
   }
-  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  return '€' + value.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Helper function to calculate total (example calculation)

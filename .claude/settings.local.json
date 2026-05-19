@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Projectos\\\\Vue\\\\Soccer\" -Force | Select-Object Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"Folder\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem \"d:\\\\Projectos\\\\Vue\\\\Soccer\\\\src\" -Recurse -Filter \"*.vue\")",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}

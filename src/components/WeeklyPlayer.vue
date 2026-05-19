@@ -43,7 +43,7 @@ import { db } from '@/firebaseConfig'
 import { getAuth } from 'firebase/auth'
 
 // === DEBUG CONFIG ===
-const debugMode = true // Set to false in production
+const debugMode = false
 
 // === STORE & AUTH ===
 // const transfersStore = useTransfersStore() // No longer needed

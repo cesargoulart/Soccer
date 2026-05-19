@@ -2,6 +2,17 @@
   <div class="equipa-view">
     <h1 class="title">Equipa</h1>
     <div class="content-wrapper">
+      <!-- Migration button -->
+      <div class="migration-bar" v-if="!migrationDone">
+        <span>Atualizar nomes dos jogadores existentes para a nova lista?</span>
+        <button class="btn-migrate" :disabled="migrating" @click="runMigration">
+          {{ migrating ? 'A atualizar...' : 'Atualizar nomes' }}
+        </button>
+      </div>
+      <div class="migration-bar done" v-else>
+        <span>✓ Nomes atualizados com sucesso.</span>
+      </div>
+
       <!-- Squad Section -->
       <div class="squad-section animate-slide-in">
         <h2>Plantel</h2>
@@ -81,10 +92,20 @@ import { useTransfersStore, type Player } from '../stores/transfers' // Import P
 import { auth, db } from '../firebaseConfig' // Import auth and db
 import { collection, query, doc, getDoc, onSnapshot } from 'firebase/firestore' // Import Firestore functions
 import type { Unsubscribe } from 'firebase/firestore' // Import Unsubscribe type separately
+import { migratePlayerNames } from '../utils/playerGenerator'
 
 const selectedPlayer = ref<Player | null>(null)
-const sellPrice = ref<number | null>(null) // Add ref for selling price
-const players = ref<Player[]>([]) // Initialize players as an empty array
+const sellPrice = ref<number | null>(null)
+const players = ref<Player[]>([])
+const migrating = ref(false)
+const migrationDone = ref(false)
+
+async function runMigration() {
+  migrating.value = true
+  await migratePlayerNames()
+  migrating.value = false
+  migrationDone.value = true
+}
 let authListener: () => void // To store the auth state change listener
 let playersListener: Unsubscribe | null = null // To store the players listener unsubscribe function
 
@@ -280,6 +301,50 @@ onUnmounted(() => {
   gap: 30px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.migration-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: rgba(100, 108, 255, 0.1);
+  border: 1px solid rgba(100, 108, 255, 0.25);
+  border-radius: 12px;
+  color: #a8b4ff;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+
+.migration-bar.done {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: #81c784;
+}
+
+.btn-migrate {
+  padding: 7px 18px;
+  background: rgba(100, 108, 255, 0.2);
+  border: 1px solid rgba(100, 108, 255, 0.4);
+  border-radius: 20px;
+  color: #fff;
+  font-size: 0.85em;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-migrate:hover:not(:disabled) {
+  background: rgba(100, 108, 255, 0.35);
+  box-shadow: 0 0 12px rgba(100, 108, 255, 0.25);
+}
+
+.btn-migrate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .squad-section,

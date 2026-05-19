@@ -60,6 +60,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/tatica',
+      name: 'tatica',
+      component: () => import('../views/TaticaView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/treino',
+      name: 'treino',
+      component: () => import('../views/TreinoView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/jogos/:id',
       name: 'detalhes-jogo',
       component: () => import('../views/DetalhesJogoView.vue'),

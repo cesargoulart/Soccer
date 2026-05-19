@@ -20,6 +20,26 @@
   --vt-c-text-light-2: rgba(45, 45, 45, 0.75);
   --vt-c-text-dark-1: #f8f8f8;
   --vt-c-text-dark-2: rgba(240, 240, 240, 0.72);
+
+  /* App layout */
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+
+  /* Brand accent */
+  --accent: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-dark: #5b21b6;
+  --accent-glow: rgba(124, 58, 237, 0.35);
+
+  /* Surface colors */
+  --surface-sidebar: #0c0c14;
+  --surface-topbar: rgba(10, 10, 18, 0.85);
+  --surface-card: rgba(255, 255, 255, 0.04);
+  --surface-card-hover: rgba(255, 255, 255, 0.07);
+
+  /* Border colors */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(124, 58, 237, 0.25);
 }
 
 /* semantic color variables for this project */
@@ -57,7 +77,6 @@
   box-sizing: border-box;
   margin: 0;
   font-weight: normal;
-  transition: all 0.3s ease;
 }
 
 body {

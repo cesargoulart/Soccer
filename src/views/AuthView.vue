@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getAuth, onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { useRouter } from 'vue-router';
 import LoginForm from '@/components/LoginForm.vue';
 import RegisterForm from '@/components/RegisterForm.vue';
 
@@ -37,6 +38,7 @@ const showLogin = ref(true);
 const currentUser = ref<User | null>(null);
 const username = ref<string>('User');
 const auth = getAuth();
+const router = useRouter();
 let unsubscribeAuth: (() => void) | null = null;
 
 // --- Authentication Handling ---
@@ -71,10 +73,7 @@ const handleLogout = async () => {
 // This function might not be strictly necessary if onAuthStateChanged covers it,
 // but can be used for immediate UI feedback if needed.
 const handleAuthSuccess = () => {
-  // The onAuthStateChanged listener should automatically update the UI.
-  // We could potentially force a refresh or update state here if needed,
-  // but usually it's not required.
-  console.log('Auth success detected in AuthView');
+  router.push('/clube');
 };
 
 </script>
