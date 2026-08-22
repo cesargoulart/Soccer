@@ -29,7 +29,18 @@
 
     <!-- Fallback Message -->
     <div v-else-if="showFallbackMessage" class="no-player"> <!-- Use v-else-if -->
-      {{ fallbackText }}
+      <template v-if="!isSaturday()">
+        Um novo jogador jovem estará disponível no próximo sábado ({{ nextSaturdayLabel }}).
+      </template>
+      <template v-else-if="actionTakenThisWeek && lastActionType === 'accepted' && lastPlayerName">
+        Você aceitou <strong>{{ lastPlayerName }}</strong> para a equipa! Um novo jogador estará disponível no próximo sábado.
+      </template>
+      <template v-else-if="actionTakenThisWeek && lastActionType === 'rejected' && lastPlayerName">
+        Você recusou <strong>{{ lastPlayerName }}</strong>. Um novo jogador estará disponível no próximo sábado.
+      </template>
+      <template v-else>
+        Você já tomou uma decisão sobre o jogador desta semana. Um novo jogador estará disponível no próximo sábado!
+      </template>
     </div>
   </div>
 </template>
@@ -40,15 +51,14 @@ import { ref, onMounted, computed, watchEffect } from 'vue'
 import { generateRandomPlayer, type Player } from '@/utils/playerGenerator' // Import Player type
 import { collection, addDoc } from 'firebase/firestore' // Import addDoc
 import { db } from '@/firebaseConfig'
-import { getAuth } from 'firebase/auth'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
 // === DEBUG CONFIG ===
 const debugMode = false
 
 // === STORE & AUTH ===
 // const transfersStore = useTransfersStore() // No longer needed
-const currentUser = getAuth().currentUser
-const userId = currentUser?.uid // Get the actual user ID, handle null case later
+const userId = ref<string | null>(null) // Resolved reactively via onAuthStateChanged
 
 // === STATE ===
 const player = ref<Player | null>(null) // Initialize player as null
@@ -66,9 +76,9 @@ function getCurrentSaturdayDateString(): string {
   return saturdayDate.toISOString().split('T')[0] // Format as YYYY-MM-DD
 }
 
-const storageKey = `weeklyPlayerActionTaken_${userId}` // User-specific storage key
-const actionTypeKey = `weeklyPlayerActionType_${userId}`
-const actionPlayerNameKey = `weeklyPlayerActionPlayerName_${userId}`
+const storageKey = computed(() => `weeklyPlayerActionTaken_${userId.value}`) // User-specific storage key
+const actionTypeKey = computed(() => `weeklyPlayerActionType_${userId.value}`)
+const actionPlayerNameKey = computed(() => `weeklyPlayerActionPlayerName_${userId.value}`)
 
 // === DATE CHECK ===
 function isSaturday(): boolean {
@@ -86,12 +96,12 @@ function isSaturday(): boolean {
 const playerGenerator = { generatePlayer: generateRandomPlayer }
 
 function generatePlayerWithFallback(): Player | null {
-  if (!userId) {
+  if (!userId.value) {
     console.warn('⚠️ Cannot generate player: User not logged in.')
     return null // Or return a default placeholder if needed
   }
   try {
-    const newPlayer = playerGenerator.generatePlayer(userId, 12)
+    const newPlayer = playerGenerator.generatePlayer(userId.value, 12)
 
     if (!newPlayer || !newPlayer.name) {
       throw new Error('Invalid player data received')
@@ -121,40 +131,39 @@ const showFallbackMessage = computed(() => {
     return false; // Otherwise, don't show (player card should show or still loading)
 })
 
-const fallbackText = computed(() => {
-    if (!isSaturday()) {
-        const nextSaturday = new Date();
-        nextSaturday.setDate(nextSaturday.getDate() + (6 - nextSaturday.getDay()));
-        return `Um novo jogador jovem estará disponível no próximo sábado (${nextSaturday.toLocaleDateString('pt-BR')}).`;
-    }
-    if (actionTakenThisWeek.value) {
-        if (lastActionType.value === 'accepted' && lastPlayerName.value) {
-            return `Você aceitou ${lastPlayerName.value} para a equipa! Um novo jogador estará disponível no próximo sábado.`;
-        }
-        if (lastActionType.value === 'rejected' && lastPlayerName.value) {
-            return `Você recusou ${lastPlayerName.value}. Um novo jogador estará disponível no próximo sábado.`;
-        }
-        return 'Você já tomou uma decisão sobre o jogador desta semana. Um novo jogador estará disponível no próximo sábado!';
-    }
-    return ''; // Default empty
+const nextSaturdayLabel = computed(() => {
+    const nextSaturday = new Date();
+    nextSaturday.setDate(nextSaturday.getDate() + (6 - nextSaturday.getDay()));
+    return nextSaturday.toLocaleDateString('pt-BR');
 })
 
 
-onMounted(() => {
-  if (!userId) {
-      console.log("WeeklyPlayer: No user ID found on mount.");
-      isLoading.value = false;
-      return; // Don't proceed if user isn't logged in
+function refreshActionStateFromStorage() {
+  if (!userId.value) {
+    actionTakenThisWeek.value = false
+    lastActionType.value = null
+    lastPlayerName.value = null
+    return
   }
   const currentSaturday = getCurrentSaturdayDateString()
-  const lastActionDate = localStorage.getItem(storageKey)
+  const lastActionDate = localStorage.getItem(storageKey.value)
   actionTakenThisWeek.value = lastActionDate === currentSaturday
   if (actionTakenThisWeek.value) {
-    lastActionType.value = localStorage.getItem(actionTypeKey) as 'accepted' | 'rejected' | null
-    lastPlayerName.value = localStorage.getItem(actionPlayerNameKey)
+    lastActionType.value = localStorage.getItem(actionTypeKey.value) as 'accepted' | 'rejected' | null
+    lastPlayerName.value = localStorage.getItem(actionPlayerNameKey.value)
+  } else {
+    lastActionType.value = null
+    lastPlayerName.value = null
   }
-  console.log(`WeeklyPlayer Mount: Is Saturday? ${isSaturday()}, Action Taken? ${actionTakenThisWeek.value}, Last Action Date: ${lastActionDate}, Current Saturday: ${currentSaturday}`);
-  isLoading.value = false; // Finished initial check
+  console.log(`WeeklyPlayer: Is Saturday? ${isSaturday()}, Action Taken? ${actionTakenThisWeek.value}, Last Action Date: ${lastActionDate}, Current Saturday: ${currentSaturday}, User: ${userId.value}`);
+}
+
+onMounted(() => {
+  onAuthStateChanged(getAuth(), (user) => {
+    userId.value = user?.uid ?? null
+    refreshActionStateFromStorage()
+    isLoading.value = false
+  })
 })
 
 watchEffect(() => {
@@ -172,11 +181,11 @@ watchEffect(() => {
 
 // === PLAYER ACTIONS ===
 async function acceptPlayer() {
-  if (!player.value || !userId) return
+  if (!player.value || !userId.value) return
 
   try {
     isLoading.value = true; // Indicate processing
-    const playersCollectionRef = collection(db, 'users', userId, 'players')
+    const playersCollectionRef = collection(db, 'users', userId.value, 'players')
     // Prepare player data for Firestore (omit temporary/unneeded fields if any)
     const playerData = {
         name: player.value.name,
@@ -191,9 +200,9 @@ async function acceptPlayer() {
 
     // Mark action taken for this week
     const currentSaturday = getCurrentSaturdayDateString()
-    localStorage.setItem(storageKey, currentSaturday)
-    localStorage.setItem(actionTypeKey, 'accepted')
-    localStorage.setItem(actionPlayerNameKey, player.value.name)
+    localStorage.setItem(storageKey.value, currentSaturday)
+    localStorage.setItem(actionTypeKey.value, 'accepted')
+    localStorage.setItem(actionPlayerNameKey.value, player.value.name)
     lastActionType.value = 'accepted'
     lastPlayerName.value = player.value.name
     actionTakenThisWeek.value = true
@@ -207,16 +216,16 @@ async function acceptPlayer() {
 }
 
 function rejectPlayer() {
-   if (!player.value || !userId) return
+   if (!player.value || !userId.value) return
 
   console.log('Player rejected:', player.value.name)
   isLoading.value = true; // Indicate processing
 
   // Mark action taken for this week
   const currentSaturday = getCurrentSaturdayDateString()
-  localStorage.setItem(storageKey, currentSaturday)
-  localStorage.setItem(actionTypeKey, 'rejected')
-  localStorage.setItem(actionPlayerNameKey, player.value.name)
+  localStorage.setItem(storageKey.value, currentSaturday)
+  localStorage.setItem(actionTypeKey.value, 'rejected')
+  localStorage.setItem(actionPlayerNameKey.value, player.value.name)
   lastActionType.value = 'rejected'
   lastPlayerName.value = player.value.name
   actionTakenThisWeek.value = true
@@ -331,5 +340,11 @@ function rejectPlayer() {
   color: #ccc;
   text-align: center;
   font-style: italic;
+}
+
+.no-player strong {
+  font-weight: bold;
+  font-style: normal;
+  color: #fff;
 }
 </style>
