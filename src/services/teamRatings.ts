@@ -3,6 +3,7 @@
 // e calcula salários. Sem dependências de Vue ou Firestore — fácil de testar.
 
 export interface PlayerLike {
+  name?: string
   position: string
   overall: number
   rating?: number

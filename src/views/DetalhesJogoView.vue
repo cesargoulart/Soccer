@@ -212,6 +212,7 @@ const loadUserTeam = async (): Promise<{
   const players: PlayerLike[] = playersSnap.docs.map((d) => {
     const data = d.data()
     return {
+      name: data.name ?? d.id,
       position: data.position,
       overall: data.overall ?? data.rating ?? 70,
       rating: data.rating,
@@ -220,6 +221,12 @@ const loadUserTeam = async (): Promise<{
   })
   return { teamName, players, tactic }
 }
+
+const toMatchPlayers = (players: PlayerLike[]) =>
+  players.map((player) => ({
+    name: player.name ?? 'Jogador',
+    position: player.position,
+  }))
 
 // Iniciar simulação com dados dos times
 const startSimulation = async () => {
@@ -235,22 +242,21 @@ const startSimulation = async () => {
     ? computeRatings(userTeam.players, userTeam.tactic)
     : { attackRating: 75, defenseRating: 70 }
 
-  const userIsHome =
-    !!userTeam?.teamName && userTeam.teamName === fixture.value.homeTeam
+  const userIsHome = !!userTeam?.teamName && userTeam.teamName === fixture.value.homeTeam
 
   const homeTeamData = {
     name: fixture.value.homeTeam,
     stadium: fixture.value.stadium,
     attackRating: userIsHome ? userRatings.attackRating : opponentRatings.attackRating,
     defenseRating: userIsHome ? userRatings.defenseRating : opponentRatings.defenseRating,
-    players: userIsHome ? userTeam!.players : [],
+    players: userIsHome ? toMatchPlayers(userTeam!.players) : [],
   }
 
   const awayTeamData = {
     name: fixture.value.awayTeam,
     attackRating: !userIsHome ? userRatings.attackRating : opponentRatings.attackRating,
     defenseRating: !userIsHome ? userRatings.defenseRating : opponentRatings.defenseRating,
-    players: !userIsHome && userTeam ? userTeam.players : [],
+    players: !userIsHome && userTeam ? toMatchPlayers(userTeam.players) : [],
   }
 
   // Iniciar simulação com os times
