@@ -54,6 +54,8 @@ const userId = currentUser?.uid // Get the actual user ID, handle null case late
 const player = ref<Player | null>(null) // Initialize player as null
 const actionTakenThisWeek = ref(false) // Track if action was taken
 const isLoading = ref(true) // Track initial loading/checking state
+const lastActionType = ref<'accepted' | 'rejected' | null>(null)
+const lastPlayerName = ref<string | null>(null)
 
 // === DATE & PERSISTENCE HELPERS ===
 function getCurrentSaturdayDateString(): string {
@@ -65,6 +67,8 @@ function getCurrentSaturdayDateString(): string {
 }
 
 const storageKey = `weeklyPlayerActionTaken_${userId}` // User-specific storage key
+const actionTypeKey = `weeklyPlayerActionType_${userId}`
+const actionPlayerNameKey = `weeklyPlayerActionPlayerName_${userId}`
 
 // === DATE CHECK ===
 function isSaturday(): boolean {
@@ -123,7 +127,15 @@ const fallbackText = computed(() => {
         nextSaturday.setDate(nextSaturday.getDate() + (6 - nextSaturday.getDay()));
         return `Um novo jogador jovem estará disponível no próximo sábado (${nextSaturday.toLocaleDateString('pt-BR')}).`;
     }
-    if (actionTakenThisWeek.value) return 'Você já tomou uma decisão sobre o jogador desta semana. Um novo jogador estará disponível no próximo sábado!';
+    if (actionTakenThisWeek.value) {
+        if (lastActionType.value === 'accepted' && lastPlayerName.value) {
+            return `Você aceitou ${lastPlayerName.value} para a equipa! Um novo jogador estará disponível no próximo sábado.`;
+        }
+        if (lastActionType.value === 'rejected' && lastPlayerName.value) {
+            return `Você recusou ${lastPlayerName.value}. Um novo jogador estará disponível no próximo sábado.`;
+        }
+        return 'Você já tomou uma decisão sobre o jogador desta semana. Um novo jogador estará disponível no próximo sábado!';
+    }
     return ''; // Default empty
 })
 
@@ -137,6 +149,10 @@ onMounted(() => {
   const currentSaturday = getCurrentSaturdayDateString()
   const lastActionDate = localStorage.getItem(storageKey)
   actionTakenThisWeek.value = lastActionDate === currentSaturday
+  if (actionTakenThisWeek.value) {
+    lastActionType.value = localStorage.getItem(actionTypeKey) as 'accepted' | 'rejected' | null
+    lastPlayerName.value = localStorage.getItem(actionPlayerNameKey)
+  }
   console.log(`WeeklyPlayer Mount: Is Saturday? ${isSaturday()}, Action Taken? ${actionTakenThisWeek.value}, Last Action Date: ${lastActionDate}, Current Saturday: ${currentSaturday}`);
   isLoading.value = false; // Finished initial check
 })
@@ -176,6 +192,10 @@ async function acceptPlayer() {
     // Mark action taken for this week
     const currentSaturday = getCurrentSaturdayDateString()
     localStorage.setItem(storageKey, currentSaturday)
+    localStorage.setItem(actionTypeKey, 'accepted')
+    localStorage.setItem(actionPlayerNameKey, player.value.name)
+    lastActionType.value = 'accepted'
+    lastPlayerName.value = player.value.name
     actionTakenThisWeek.value = true
 
   } catch (error) {
@@ -195,6 +215,10 @@ function rejectPlayer() {
   // Mark action taken for this week
   const currentSaturday = getCurrentSaturdayDateString()
   localStorage.setItem(storageKey, currentSaturday)
+  localStorage.setItem(actionTypeKey, 'rejected')
+  localStorage.setItem(actionPlayerNameKey, player.value.name)
+  lastActionType.value = 'rejected'
+  lastPlayerName.value = player.value.name
   actionTakenThisWeek.value = true
   isLoading.value = false;
 }
