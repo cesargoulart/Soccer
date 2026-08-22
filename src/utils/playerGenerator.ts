@@ -1,11 +1,14 @@
 import { collection, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebaseConfig'; // Assuming firebaseConfig is in src/
+import { computeSalary } from '../services/teamRatings';
 
 export interface Player { // Add export here
   name: string;
   position: string;
   overall: number;
   rating: number;
+  age: number;
+  salary: number; // salário semanal na moeda do jogo
   clubeId: string;
   number?: number;
 }
@@ -48,14 +51,22 @@ function generateRandomOverall(): number {
   return Math.floor(Math.random() * (90 - 50 + 1)) + 50;
 }
 
+// Idade aleatória entre 17 e 34 anos
+function generateRandomAge(): number {
+  return Math.floor(Math.random() * (34 - 17 + 1)) + 17;
+}
+
 // Function to generate a single random player
 export function generateRandomPlayer(userId: string, playerNumber: number): Player {
   const overall = generateRandomOverall();
+  const age = generateRandomAge();
   return {
     name: generateRandomName(),
     position: generateRandomPosition(),
     overall: overall,
     rating: overall, // Use the same value for rating as overall
+    age,
+    salary: computeSalary(overall, age),
     clubeId: userId,
     number: playerNumber // Assign sequential number
   };
@@ -81,11 +92,14 @@ export async function generateAndSavePlayers(userId: string): Promise<void> {
   const names = shuffle(allNameCombinations()).slice(0, 11);
   for (let i = 0; i < names.length; i++) {
     const overall = generateRandomOverall();
+    const age = generateRandomAge();
     const player: Player = {
       name: names[i],
       position: generateRandomPosition(),
       overall,
       rating: overall,
+      age,
+      salary: computeSalary(overall, age),
       clubeId: userId,
       number: i + 1,
     };

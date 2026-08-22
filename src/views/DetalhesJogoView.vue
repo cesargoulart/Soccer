@@ -133,9 +133,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { doc, getDoc, collection, query, orderBy, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebaseConfig'
+import { doc, getDoc, getDocs, collection, query, orderBy, onSnapshot } from 'firebase/firestore'
+import { db, auth } from '@/firebaseConfig'
 import { useMatchSimulation } from '@/services/matchEngine'
+import { computeRatings, type PlayerLike, type Tactic } from '@/services/teamRatings'
 
 interface Comment {
   id: string
@@ -194,25 +195,62 @@ const isMatchEnded = computed(() => {
   return comments.value.some((comment) => comment.type === 'fullTime')
 })
 
+// Carrega jogadores + tática do utilizador atual e calcula a força da equipa.
+// A tática (formação + estilo) afeta diretamente attack/defense passados ao motor.
+const loadUserTeam = async (): Promise<{
+  teamName: string
+  players: PlayerLike[]
+  tactic: Partial<Tactic>
+} | null> => {
+  const user = auth.currentUser
+  if (!user) return null
+  const userSnap = await getDoc(doc(db, 'users', user.uid))
+  const teamName = userSnap.exists() ? userSnap.data().team : ''
+  const tactic = (userSnap.exists() && userSnap.data().tatica) || {}
+
+  const playersSnap = await getDocs(collection(db, 'users', user.uid, 'players'))
+  const players: PlayerLike[] = playersSnap.docs.map((d) => {
+    const data = d.data()
+    return {
+      position: data.position,
+      overall: data.overall ?? data.rating ?? 70,
+      rating: data.rating,
+      age: data.age,
+    }
+  })
+  return { teamName, players, tactic }
+}
+
 // Iniciar simulação com dados dos times
 const startSimulation = async () => {
   if (!fixture.value) return
 
-  // Dados do time da casa
+  const userTeam = await loadUserTeam()
+
+  // Ratings por defeito para a equipa adversária (ainda sem plantel próprio carregado)
+  const opponentRatings = { attackRating: 72, defenseRating: 72 }
+
+  // Ratings reais do utilizador, derivados dos jogadores + tática escolhida
+  const userRatings = userTeam
+    ? computeRatings(userTeam.players, userTeam.tactic)
+    : { attackRating: 75, defenseRating: 70 }
+
+  const userIsHome =
+    !!userTeam?.teamName && userTeam.teamName === fixture.value.homeTeam
+
   const homeTeamData = {
     name: fixture.value.homeTeam,
     stadium: fixture.value.stadium,
-    attackRating: 75, // Você pode buscar esses valores do Firestore depois
-    defenseRating: 70,
-    players: [], // Idealmente, buscar jogadores do time
+    attackRating: userIsHome ? userRatings.attackRating : opponentRatings.attackRating,
+    defenseRating: userIsHome ? userRatings.defenseRating : opponentRatings.defenseRating,
+    players: userIsHome ? userTeam!.players : [],
   }
 
-  // Dados do time visitante
   const awayTeamData = {
     name: fixture.value.awayTeam,
-    attackRating: 73,
-    defenseRating: 72,
-    players: [],
+    attackRating: !userIsHome ? userRatings.attackRating : opponentRatings.attackRating,
+    defenseRating: !userIsHome ? userRatings.defenseRating : opponentRatings.defenseRating,
+    players: !userIsHome && userTeam ? userTeam.players : [],
   }
 
   // Iniciar simulação com os times

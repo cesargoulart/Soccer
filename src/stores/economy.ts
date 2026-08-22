@@ -10,6 +10,7 @@ export interface EconomyData {
   publicidade?: number
   vendasCompras?: number
   staff?: number
+  salarios?: number // total acumulado pago em salários
   // Add other fields as needed
 }
 
@@ -20,6 +21,7 @@ const defaultEconomy: EconomyData = {
   publicidade: 0,
   vendasCompras: 0,
   staff: 0,
+  salarios: 0,
 }
 
 export const useEconomyStore = defineStore('economy', () => {
@@ -100,6 +102,24 @@ export const useEconomyStore = defineStore('economy', () => {
     }
   }
 
+  // Pagar a folha salarial semanal: soma a 'despesas' e 'salarios' e desconta de 'lucros'.
+  // Deve ser chamada uma vez por ciclo semanal (ex.: no fecho da jornada de sábado).
+  const payWeeklyWages = async (amount: number) => {
+    const user = auth.currentUser
+    if (!user || amount <= 0) return
+    const economyDocRef = doc(db, 'users', user.uid, 'economy', 'current')
+    const current = economyData.value ?? { ...defaultEconomy }
+    await setDoc(
+      economyDocRef,
+      {
+        despesas: (current.despesas ?? 0) + amount,
+        salarios: (current.salarios ?? 0) + amount,
+        lucros: (current.lucros ?? 0) - amount,
+      },
+      { merge: true },
+    )
+  }
+
   // Unsubscribe function
   const unsubscribe = () => {
     if (unsubscribeFromEconomy) {
@@ -139,6 +159,7 @@ export const useEconomyStore = defineStore('economy', () => {
     isLoading,
     error,
     subscribeToEconomy, // Expose if manual trigger needed elsewhere
+    payWeeklyWages,
     unsubscribe,
   }
 })

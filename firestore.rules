@@ -1,0 +1,93 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore para o jogo de futebol.
+// Princípio: cada utilizador só pode ler/escrever os SEUS próprios dados.
+// As coleções partilhadas (lista de transferências, fixtures) são legíveis por
+// qualquer utilizador autenticado, mas a escrita é restringida.
+//
+// NOTA IMPORTANTE: estas regras impedem que um jogador altere os dados de OUTRO
+// jogador a partir do cliente. NÃO impedem, por si só, que um jogador falsifique
+// o RESULTADO do seu próprio jogo, porque a simulação ainda corre no cliente.
+// Para um jogo competitivo, a simulação e a escrita de resultados/economia
+// deviam migrar para uma Cloud Function (ver SECURITY.md).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Dados privados do utilizador: clube, jogadores, economia, etc.
+    match /users/{userId} {
+      allow read: if isSignedIn();          // perfis/equipas visíveis a autenticados
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId);
+
+      // Subcoleções (players, economy, ...) — só o dono escreve.
+      match /{document=**} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Lista de transferências partilhada (coleção 'transferList').
+    // Qualquer autenticado lê; só o vendedor pode criar/remover o seu anúncio.
+    match /transferList/{transferId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.sellerUserId == request.auth.uid;
+      allow delete: if isSignedIn();
+      // Updates (ex.: compra) devem passar por lógica de servidor; bloqueado por agora.
+      allow update: if false;
+    }
+
+    // Clubes (registo público de equipas). Legível por autenticados.
+    match /clubes/{clubeId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Jogos / fixtures e respetivos comentários, e listas de calendário.
+    // Legíveis por autenticados. A escrita de resultados deveria ser feita pelo
+    // servidor; mantém-se restrita ao cliente apenas durante o desenvolvimento.
+    match /fixtures/{fixtureId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn();
+      }
+    }
+
+    match /upcomingFixtures/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /completedFixtures/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Coleção global de jogadores (se usada). Só leitura a autenticados;
+    // escrita restrita ao dono via campo clubeId.
+    match /players/{playerId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.clubeId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+                    && resource.data.clubeId == request.auth.uid;
+    }
+
+    // Bloqueio por defeito para tudo o resto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

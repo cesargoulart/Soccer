@@ -26,6 +26,9 @@ export interface Player {
   position: string
   number: number
   rating: number
+  overall?: number
+  age?: number
+  salary?: number // salário semanal na moeda do jogo
   team: string // Team name (selling team)
   price?: number // Add optional price field
   // Add any other properties needed for the transfer list display

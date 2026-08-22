@@ -2,17 +2,6 @@
   <div class="equipa-view">
     <h1 class="title">Equipa</h1>
     <div class="content-wrapper">
-      <!-- Migration button -->
-      <div class="migration-bar" v-if="!migrationDone">
-        <span>Atualizar nomes dos jogadores existentes para a nova lista?</span>
-        <button class="btn-migrate" :disabled="migrating" @click="runMigration">
-          {{ migrating ? 'A atualizar...' : 'Atualizar nomes' }}
-        </button>
-      </div>
-      <div class="migration-bar done" v-else>
-        <span>✓ Nomes atualizados com sucesso.</span>
-      </div>
-
       <!-- Squad Section -->
       <div class="squad-section animate-slide-in">
         <h2>Plantel</h2>
@@ -23,6 +12,8 @@
               <th>Name</th>
               <th>Position</th>
               <th>Rating</th>
+              <th>Idade</th>
+              <th>Salário/sem.</th>
             </tr>
           </thead>
           <tbody>
@@ -36,24 +27,52 @@
               <td>{{ player.name }}</td>
               <td>{{ player.position }}</td>
               <td>{{ player.rating }}</td>
+              <td>{{ player.age ?? '—' }}</td>
+              <td>{{ formatMoney(player.salary) }}</td>
             </tr>
           </tbody>
+          <tfoot>
+            <tr class="wage-total-row">
+              <td colspan="5">Folha salarial semanal total</td>
+              <td>{{ formatMoney(totalWages) }}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
-      <!-- Staff Section (remains the same) -->
+      <!-- Staff Section -->
       <div class="staff-section animate-slide-in" style="animation-delay: 0.2s">
         <h2>Equipa Técnica</h2>
         <div class="staff-grid">
           <div class="staff-card">
             <h3>Treinador Principal</h3>
-            <p>Nome do treinador</p>
+            <input
+              v-if="editingStaff"
+              v-model="treinadorPrincipal"
+              class="staff-input"
+              placeholder="Nome do treinador"
+            />
+            <p v-else class="staff-name">{{ treinadorPrincipal || 'Nome do treinador' }}</p>
           </div>
           <div class="staff-card">
             <h3>Treinador Adjunto</h3>
-            <p>Nome do adjunto</p>
+            <input
+              v-if="editingStaff"
+              v-model="treinadorAdjunto"
+              class="staff-input"
+              placeholder="Nome do adjunto"
+            />
+            <p v-else class="staff-name">{{ treinadorAdjunto || 'Nome do adjunto' }}</p>
           </div>
         </div>
+
+        <button v-if="!editingStaff" class="btn-save-staff" @click="startEditStaff">
+          Editar
+        </button>
+        <button v-else class="btn-save-staff" :disabled="savingStaff" @click="saveStaff">
+          {{ savingStaff ? 'A guardar...' : 'Guardar' }}
+        </button>
+        <span v-if="staffSaved" class="staff-saved-msg">✓ Guardado</span>
       </div>
     </div>
   </div>
@@ -65,6 +84,8 @@
         <p><strong>Number:</strong> {{ selectedPlayer.number }}</p>
         <p><strong>Position:</strong> {{ selectedPlayer.position }}</p>
         <p><strong>Rating:</strong> {{ selectedPlayer.rating }}</p>
+        <p><strong>Idade:</strong> {{ selectedPlayer.age ?? '—' }}</p>
+        <p><strong>Salário semanal:</strong> {{ formatMoney(selectedPlayer.salary) }}</p>
       </div>
       <!-- Add Price Input -->
       <div class="price-input-group">
@@ -87,24 +108,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTransfersStore, type Player } from '../stores/transfers' // Import Player type
 import { auth, db } from '../firebaseConfig' // Import auth and db
-import { collection, query, doc, getDoc, onSnapshot } from 'firebase/firestore' // Import Firestore functions
+import { collection, query, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore' // Import Firestore functions
 import type { Unsubscribe } from 'firebase/firestore' // Import Unsubscribe type separately
-import { migratePlayerNames } from '../utils/playerGenerator'
-
+import { totalWageBill, computeSalary } from '../services/teamRatings'
 const selectedPlayer = ref<Player | null>(null)
+
+// Equipa técnica (editável e guardada no Firestore)
+const currentUserId = ref<string | null>(null)
+const treinadorPrincipal = ref('')
+const treinadorAdjunto = ref('')
+const savingStaff = ref(false)
+const staffSaved = ref(false)
+const editingStaff = ref(false)
+
+const startEditStaff = () => {
+  staffSaved.value = false
+  editingStaff.value = true
+}
+
+const loadStaff = async (userId: string) => {
+  const snap = await getDoc(doc(db, 'users', userId))
+  if (snap.exists()) {
+    const staff = snap.data().staff ?? {}
+    treinadorPrincipal.value = staff.principal ?? ''
+    treinadorAdjunto.value = staff.adjunto ?? ''
+  }
+}
+
+const saveStaff = async () => {
+  if (!currentUserId.value) return
+  savingStaff.value = true
+  staffSaved.value = false
+  try {
+    await setDoc(
+      doc(db, 'users', currentUserId.value),
+      { staff: { principal: treinadorPrincipal.value, adjunto: treinadorAdjunto.value } },
+      { merge: true },
+    )
+    editingStaff.value = false
+    staffSaved.value = true
+    setTimeout(() => (staffSaved.value = false), 2000)
+  } catch (error) {
+    console.error('Erro ao guardar equipa técnica:', error)
+  } finally {
+    savingStaff.value = false
+  }
+}
 const sellPrice = ref<number | null>(null)
 const players = ref<Player[]>([])
-const migrating = ref(false)
-const migrationDone = ref(false)
 
-async function runMigration() {
-  migrating.value = true
-  await migratePlayerNames()
-  migrating.value = false
-  migrationDone.value = true
+// Folha salarial semanal total do plantel
+const totalWages = computed(() => totalWageBill(players.value))
+
+function formatMoney(value?: number): string {
+  if (value == null) return '—'
+  return value.toLocaleString('pt-PT') + ' €'
 }
 let authListener: () => void // To store the auth state change listener
 let playersListener: Unsubscribe | null = null // To store the players listener unsubscribe function
@@ -220,6 +281,10 @@ const subscribeToPlayers = (userId: string) => {
               position: data.position,
               number: data.number ?? fetchedPlayers.length + 1, // Use stored number if available, else sequential
               rating: data.rating, // Use 'rating' field from Firestore data
+              overall: data.overall ?? data.rating,
+              age: data.age, // pode estar ausente em jogadores antigos
+              // fallback: jogadores antigos sem salário guardado -> calcula a partir do rating/idade
+              salary: data.salary ?? computeSalary(data.overall ?? data.rating, data.age ?? 25),
               team: data.team || teamName, // Use team from player data if available, else fallback
             })
           } else {
@@ -254,9 +319,12 @@ onMounted(() => {
     if (user) {
       // User is logged in, fetch players for their team
       // Assuming the team ID is the user's UID
+      currentUserId.value = user.uid
       subscribeToPlayers(user.uid) // Use the new subscription function
+      loadStaff(user.uid) // Carregar nomes da equipa técnica
     } else {
       // User is logged out, clear players
+      currentUserId.value = null
       players.value = []
     }
   })
@@ -303,49 +371,52 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-.migration-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 20px;
-  background: rgba(100, 108, 255, 0.1);
-  border: 1px solid rgba(100, 108, 255, 0.25);
-  border-radius: 12px;
-  color: #a8b4ff;
-  font-size: 0.9em;
-  margin-bottom: 8px;
-}
-
-.migration-bar.done {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: rgba(76, 175, 80, 0.3);
-  color: #81c784;
-}
-
-.btn-migrate {
-  padding: 7px 18px;
-  background: rgba(100, 108, 255, 0.2);
-  border: 1px solid rgba(100, 108, 255, 0.4);
-  border-radius: 20px;
+.staff-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
   color: #fff;
-  font-size: 0.85em;
-  font-weight: 500;
+  font-size: 1em;
+  margin-top: 8px;
+  box-sizing: border-box;
+}
+
+.staff-input:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+.btn-save-staff {
+  margin-top: 18px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #646cff, #a855f7);
+  color: #fff;
+  font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.25s ease;
-  white-space: nowrap;
+  transition: opacity 0.2s ease;
 }
 
-.btn-migrate:hover:not(:disabled) {
-  background: rgba(100, 108, 255, 0.35);
-  box-shadow: 0 0 12px rgba(100, 108, 255, 0.25);
+.btn-save-staff:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.btn-migrate:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.staff-name {
+  margin-top: 8px;
+  font-size: 1.05em;
+  color: #fff;
 }
+
+.staff-saved-msg {
+  margin-left: 12px;
+  color: #4ade80;
+  font-weight: 600;
+}
+
 
 .squad-section,
 .staff-section {
