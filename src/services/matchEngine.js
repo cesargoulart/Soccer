@@ -409,7 +409,10 @@ export class MatchEngine {
 
   getRandomKeeper(team) {
     // Se o time tiver guarda-redes específicos, retornar um deles
-    const keepers = team.players?.filter(p => p.position === 'GK').map(p => p.name) || ['Rui Patrício', 'Diogo Costa'];
+    const keepers = team.players?.filter(p => p.position === 'GK').map(p => p.name) || [];
+
+    // Sem guarda-redes na lista (equipa adversária ou onze sem GR), usa nomes genéricos
+    if (!keepers.length) keepers.push('Rui Patrício', 'Diogo Costa');
 
     return keepers[this.getRandomInt(0, keepers.length - 1)];
   }

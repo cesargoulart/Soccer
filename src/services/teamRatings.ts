@@ -2,17 +2,23 @@
 // Lógica PURA e testável que liga jogadores + tática à força da equipa,
 // e calcula salários. Sem dependências de Vue ou Firestore — fácil de testar.
 
+import { getFormation, positionFitPenalty, suggestLineup, type Lineup } from './formations'
+
 export interface PlayerLike {
+  id?: string
   name?: string
   position: string
   overall: number
   rating?: number
   age?: number
+  number?: number
 }
 
 export interface Tactic {
   formacao: string
   estilo: string
+  /** Onze inicial: slotId da formação -> id do jogador. */
+  onze?: Lineup
 }
 
 export interface TeamRatings {
@@ -118,6 +124,48 @@ export function computeRatings(players: PlayerLike[], tactic?: Partial<Tactic>):
 
 function clampRating(v: number): number {
   return Math.max(1, Math.min(99, Math.round(v)))
+}
+
+// ---------------------------------------------------------------------------
+// Onze inicial
+// ---------------------------------------------------------------------------
+
+/**
+ * Converte o plantel + o onze escolhido na TaticaView na lista dos 11 titulares.
+ *
+ * - Cada titular passa a contar com o grupo de posição do SLOT onde foi colocado,
+ *   não com a sua posição natural (um defesa colocado a médio conta como médio).
+ * - Jogar fora da posição natural custa overall (ver `positionFitPenalty`).
+ * - Slots por preencher são completados com os melhores jogadores disponíveis,
+ *   para que um onze incompleto nunca parta a simulação.
+ * - Sem onze guardado, devolve o plantel inteiro (comportamento antigo).
+ */
+export function applyLineup(players: PlayerLike[], tactic?: Partial<Tactic>): PlayerLike[] {
+  if (!players.length) return players
+
+  const hasIds = players.some((p) => p.id)
+  const saved = tactic?.onze
+  if (!hasIds || !saved || !Object.keys(saved).length) return players
+
+  const formation = getFormation(tactic?.formacao)
+  const lineup = suggestLineup(players, formation.id, saved, positionGroup)
+  const byId = new Map(players.filter((p) => p.id).map((p) => [p.id as string, p]))
+
+  const starters: PlayerLike[] = []
+  for (const slot of formation.slots) {
+    const player = byId.get(lineup[slot.id])
+    if (!player) continue
+    const base = player.overall ?? player.rating ?? 70
+    const penalty = positionFitPenalty(positionGroup(player.position), slot.group)
+    starters.push({
+      ...player,
+      position: slot.group,
+      overall: clampRating(base * penalty),
+      rating: clampRating(base * penalty),
+    })
+  }
+
+  return starters.length ? starters : players
 }
 
 // ---------------------------------------------------------------------------

@@ -136,7 +136,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { doc, getDoc, getDocs, collection, query, orderBy, onSnapshot } from 'firebase/firestore'
 import { db, auth } from '@/firebaseConfig'
 import { useMatchSimulation } from '@/services/matchEngine'
-import { computeRatings, type PlayerLike, type Tactic } from '@/services/teamRatings'
+import { computeRatings, applyLineup, type PlayerLike, type Tactic } from '@/services/teamRatings'
 
 interface Comment {
   id: string
@@ -212,11 +212,13 @@ const loadUserTeam = async (): Promise<{
   const players: PlayerLike[] = playersSnap.docs.map((d) => {
     const data = d.data()
     return {
+      id: d.id,
       name: data.name ?? d.id,
       position: data.position,
       overall: data.overall ?? data.rating ?? 70,
       rating: data.rating,
       age: data.age,
+      number: data.number,
     }
   })
   return { teamName, players, tactic }
@@ -234,12 +236,16 @@ const startSimulation = async () => {
 
   const userTeam = await loadUserTeam()
 
+  // Apenas o onze escolhido na página Tática entra em campo. Sem onze guardado,
+  // applyLineup devolve o plantel inteiro (comportamento antigo).
+  const starters = userTeam ? applyLineup(userTeam.players, userTeam.tactic) : []
+
   // Ratings por defeito para a equipa adversária (ainda sem plantel próprio carregado)
   const opponentRatings = { attackRating: 72, defenseRating: 72 }
 
-  // Ratings reais do utilizador, derivados dos jogadores + tática escolhida
+  // Ratings reais do utilizador, derivados dos titulares + tática escolhida
   const userRatings = userTeam
-    ? computeRatings(userTeam.players, userTeam.tactic)
+    ? computeRatings(starters, userTeam.tactic)
     : { attackRating: 75, defenseRating: 70 }
 
   const userIsHome = !!userTeam?.teamName && userTeam.teamName === fixture.value.homeTeam
@@ -249,14 +255,14 @@ const startSimulation = async () => {
     stadium: fixture.value.stadium,
     attackRating: userIsHome ? userRatings.attackRating : opponentRatings.attackRating,
     defenseRating: userIsHome ? userRatings.defenseRating : opponentRatings.defenseRating,
-    players: userIsHome ? toMatchPlayers(userTeam!.players) : [],
+    players: userIsHome ? toMatchPlayers(starters) : [],
   }
 
   const awayTeamData = {
     name: fixture.value.awayTeam,
     attackRating: !userIsHome ? userRatings.attackRating : opponentRatings.attackRating,
     defenseRating: !userIsHome ? userRatings.defenseRating : opponentRatings.defenseRating,
-    players: !userIsHome && userTeam ? toMatchPlayers(userTeam.players) : [],
+    players: !userIsHome && userTeam ? toMatchPlayers(starters) : [],
   }
 
   // Iniciar simulação com os times
