@@ -5,11 +5,11 @@
     <!-- Navigation Links -->
     <div class="navigation-links">
       <router-link to="/jogos" class="nav-link">
-        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+        <span class="icon"><AppIcon name="arrow-left" :size="16" /></span>
         Voltar para Jogos
       </router-link>
       <router-link to="/jogos/historico" class="nav-link">
-        <span class="icon"><i class="fas fa-history"></i></span>
+        <span class="icon"><AppIcon name="history" :size="16" /></span>
         Histórico de Jogos
       </router-link>
     </div>
@@ -75,6 +75,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/firebaseConfig'
+import AppIcon from '@/components/AppIcon.vue'
 
 // Interface para jogos futuros
 interface UpcomingFixture {

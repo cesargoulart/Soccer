@@ -1,0 +1,134 @@
+/* mobile.css
+   Ajustes para ecrãs pequenos. As regras dos componentes são "scoped" e por isso
+   têm mais especificidade — daí o !important em vários sítios. */
+
+@media (max-width: 900px) {
+  /* ----------------------------------------------------------- páginas */
+  .main-content [class$='-view'] {
+    padding: 14px !important;
+  }
+
+  .main-content .title,
+  .main-content h1 {
+    font-size: 1.7rem !important;
+    margin-bottom: 18px !important;
+    line-height: 1.25;
+  }
+
+  .main-content h2 {
+    font-size: 1.15rem !important;
+  }
+
+  .main-content h3 {
+    font-size: 1rem !important;
+  }
+
+  .main-content .content-wrapper {
+    gap: 16px !important;
+  }
+
+  /* ------------------------------------------------------------ cartões */
+  .main-content .calendario-section,
+  .main-content .historico-section,
+  .main-content .results-section,
+  .main-content .transfers-section,
+  .main-content .staff-section,
+  .main-content .squad-section,
+  .main-content .info-card,
+  .main-content .table-card,
+  .main-content .player-card,
+  .main-content .info-item,
+  .main-content .staff-card,
+  .main-content .match-card,
+  .main-content .tactic-card,
+  .main-content .treino-card,
+  .main-content .status-card,
+  .main-content .match-stats,
+  .main-content .commentary-section {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .main-content .no-players {
+    padding: 24px !important;
+  }
+
+  .main-content .style-option,
+  .main-content .focus-option,
+  .main-content .formation-option {
+    padding: 14px 10px !important;
+  }
+
+  /* ------------------------------------------------------------ tabelas */
+  /* display:block deixa a tabela deslizar na horizontal em vez de espremer
+     as colunas ou empurrar a página para fora do ecrã. */
+  .main-content table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.8rem !important;
+  }
+
+  .main-content th,
+  .main-content td {
+    padding: 8px 10px !important;
+    white-space: nowrap;
+  }
+
+  /* --------------------------------------------------------------- modais */
+  .modal-overlay {
+    padding: 16px !important;
+  }
+
+  .modal-content,
+  .settings-modal {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 20px !important;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  /* ---------------------------------------------------- detalhes do jogo */
+  .main-content .teams-container {
+    gap: 10px !important;
+  }
+
+  .main-content .teams-container h2 {
+    font-size: 1rem !important;
+  }
+
+  .main-content .navigation-links {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  /* ------------------------------------------------------ alvos de toque */
+  .main-content button,
+  .main-content .nav-link,
+  .main-content input,
+  .main-content select {
+    min-height: 40px;
+  }
+
+  .main-content button {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .main-content .title,
+  .main-content h1 {
+    font-size: 1.45rem !important;
+  }
+
+  /* Grelhas de cartões passam a uma coluna em ecrãs muito estreitos */
+  .main-content .style-grid,
+  .main-content .stats-grid,
+  .main-content .info-grid,
+  .main-content .staff-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

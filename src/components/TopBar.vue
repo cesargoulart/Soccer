@@ -1,6 +1,9 @@
 <template>
   <header class="topbar">
     <div class="topbar-left">
+      <button class="menu-btn" aria-label="Abrir menu" @click="emit('toggle-menu')">
+        <AppIcon name="menu" :size="20" />
+      </button>
       <h1 class="page-title">{{ currentPageTitle }}</h1>
     </div>
     <div class="topbar-right">
@@ -16,6 +19,9 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAuth } from 'firebase/auth'
+import AppIcon from './AppIcon.vue'
+
+const emit = defineEmits<{ (e: 'toggle-menu'): void }>()
 
 const route = useRoute()
 const auth = getAuth()
@@ -26,6 +32,8 @@ const pageTitles: Record<string, string> = {
   '/jogos': 'Jogos',
   '/jogos/calendario': 'Calendário Completo',
   '/jogos/historico': 'Histórico de Jogos',
+  '/tatica': 'Tática',
+  '/treino': 'Treino',
   '/economy': 'Economia',
   '/transfers': 'Transferências',
   '/jovens': 'Jovens',
@@ -50,6 +58,7 @@ const userInitials = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 28px;
   position: sticky;
   top: 0;
@@ -57,11 +66,44 @@ const userInitials = computed(() => {
   flex-shrink: 0;
 }
 
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.menu-btn:hover {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--accent-light);
+}
+
 .page-title {
   font-size: 1.15rem;
   font-weight: 600;
   color: var(--vt-c-text-dark-1);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-card {
@@ -104,5 +146,29 @@ const userInitials = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 0 14px;
+  }
+
+  .menu-btn {
+    display: flex;
+  }
+
+  .page-title {
+    font-size: 1rem;
+  }
+
+  /* Só o círculo com a inicial cabe bem num ecrã pequeno */
+  .user-email {
+    display: none;
+  }
+
+  .user-card {
+    padding: 5px;
+    border-radius: 50%;
+  }
 }
 </style>

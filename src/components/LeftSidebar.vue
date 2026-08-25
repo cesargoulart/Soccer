@@ -1,65 +1,29 @@
 <template>
-  <aside class="sidebar">
+  <!-- Fundo escurecido, só no telemóvel -->
+  <div class="sidebar-overlay" :class="{ visible: open }" @click="emit('close')"></div>
+
+  <aside class="sidebar" :class="{ open }">
     <!-- Brand -->
     <div class="sidebar-brand">
       <div class="brand-logo">
-        <i class="fas fa-futbol"></i>
+        <AppIcon name="ball" :size="22" />
       </div>
       <div class="brand-text">
         <span class="brand-name">Soccer</span>
         <span class="brand-tagline">Manager</span>
       </div>
+      <button class="drawer-close" aria-label="Fechar menu" @click="emit('close')">
+        <AppIcon name="close" :size="20" />
+      </button>
     </div>
 
     <!-- Navigation -->
     <nav class="sidebar-nav">
       <span class="nav-section-label">Navegação</span>
 
-      <router-link to="/clube" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-shield-halved"></i></span>
-        <span class="nav-label">Clube</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/equipa" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-users"></i></span>
-        <span class="nav-label">Equipa</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/jogos" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-futbol"></i></span>
-        <span class="nav-label">Jogos</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/tatica" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-chess-board"></i></span>
-        <span class="nav-label">Tática</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/treino" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-dumbbell"></i></span>
-        <span class="nav-label">Treino</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/economy" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
-        <span class="nav-label">Economia</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/transfers" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-right-left"></i></span>
-        <span class="nav-label">Transferências</span>
-        <span class="nav-dot"></span>
-      </router-link>
-
-      <router-link to="/jovens" class="nav-item">
-        <span class="nav-icon"><i class="fas fa-seedling"></i></span>
-        <span class="nav-label">Jovens</span>
+      <router-link v-for="item in navItems" :key="item.to" :to="item.to" class="nav-item">
+        <span class="nav-icon"><AppIcon :name="item.icon" :size="17" /></span>
+        <span class="nav-label">{{ item.label }}</span>
         <span class="nav-dot"></span>
       </router-link>
     </nav>
@@ -67,7 +31,7 @@
     <!-- Footer -->
     <div class="sidebar-footer">
       <button @click="logout" class="logout-btn">
-        <span class="nav-icon"><i class="fas fa-arrow-right-from-bracket"></i></span>
+        <span class="nav-icon"><AppIcon name="logout" :size="17" /></span>
         <span>Terminar Sessão</span>
       </button>
     </div>
@@ -75,10 +39,40 @@
 </template>
 
 <script setup lang="ts">
+import { watch, onMounted, onUnmounted } from 'vue'
 import { getAuth, signOut } from 'firebase/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import AppIcon from './AppIcon.vue'
+
+const props = defineProps<{ open: boolean }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 
 const router = useRouter()
+const route = useRoute()
+
+const navItems = [
+  { to: '/clube', label: 'Clube', icon: 'shield' },
+  { to: '/equipa', label: 'Equipa', icon: 'users' },
+  { to: '/jogos', label: 'Jogos', icon: 'ball' },
+  { to: '/tatica', label: 'Tática', icon: 'pitch' },
+  { to: '/treino', label: 'Treino', icon: 'dumbbell' },
+  { to: '/economy', label: 'Economia', icon: 'chart' },
+  { to: '/transfers', label: 'Transferências', icon: 'swap' },
+  { to: '/jovens', label: 'Jovens', icon: 'seedling' },
+]
+
+// No telemóvel o menu fecha-se assim que se escolhe uma página
+watch(
+  () => route.fullPath,
+  () => emit('close'),
+)
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.open) emit('close')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 const logout = async () => {
   const auth = getAuth()
@@ -97,6 +91,7 @@ const logout = async () => {
   left: 0;
   top: 0;
   height: 100vh;
+  height: 100dvh;
   width: var(--sidebar-width);
   background: var(--surface-sidebar);
   border-right: 1px solid var(--border-subtle);
@@ -104,6 +99,14 @@ const logout = async () => {
   flex-direction: column;
   z-index: 100;
   box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.drawer-close {
+  display: none;
 }
 
 /* Brand */
@@ -124,7 +127,6 @@ const logout = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
   color: white;
   box-shadow: 0 4px 14px var(--accent-glow);
   flex-shrink: 0;
@@ -237,7 +239,6 @@ const logout = async () => {
   justify-content: center;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
-  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.35);
   flex-shrink: 0;
   transition:
@@ -264,27 +265,10 @@ const logout = async () => {
   opacity: 1;
 }
 
-/* Transfer badge */
-.transfer-badge {
-  margin-left: auto;
-  background: rgba(124, 58, 237, 0.2);
-  color: var(--accent-light);
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 20px;
-  border: 1px solid var(--border-accent);
-  white-space: nowrap;
-  transition: background 0.18s ease;
-}
-
-.nav-item:hover .transfer-badge {
-  background: rgba(124, 58, 237, 0.3);
-}
-
 /* Footer */
 .sidebar-footer {
   padding: 14px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
@@ -301,6 +285,7 @@ const logout = async () => {
   color: rgba(239, 68, 68, 0.65);
   cursor: pointer;
   font-size: 0.875rem;
+  font-family: inherit;
   font-weight: 500;
   transition:
     background 0.18s ease,
@@ -321,5 +306,62 @@ const logout = async () => {
 
 .logout-btn:hover .nav-icon {
   background: rgba(239, 68, 68, 0.18);
+}
+
+/* ------------------------------------------------------------------ */
+/* Telemóvel / tablet: a barra passa a gaveta que desliza por cima     */
+/* ------------------------------------------------------------------ */
+@media (max-width: 900px) {
+  .sidebar {
+    width: min(280px, 84vw);
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    will-change: transform;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+
+  .sidebar-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar-brand {
+    padding: 18px 18px;
+  }
+
+  .drawer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .nav-item {
+    padding: 12px;
+    font-size: 0.95rem;
+  }
 }
 </style>

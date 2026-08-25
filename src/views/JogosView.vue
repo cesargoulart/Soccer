@@ -5,11 +5,11 @@
     <!-- Navigation Links -->
     <div class="navigation-links">
       <router-link to="/jogos/calendario" class="nav-link">
-        <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+        <span class="icon"><AppIcon name="calendar" :size="16" /></span>
         Calendário Completo
       </router-link>
       <router-link to="/jogos/historico" class="nav-link">
-        <span class="icon"><i class="fas fa-history"></i></span>
+        <span class="icon"><AppIcon name="history" :size="16" /></span>
         Histórico de Jogos
       </router-link>
     </div>
@@ -122,6 +122,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, setDoc,
 import { db } from '@/firebaseConfig'
 import { getAuth } from 'firebase/auth'
 import SaturdayCountdown from '@/components/SaturdayCountdown.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 // Interfaces separadas para jogos futuros e completados
 interface UpcomingFixture {

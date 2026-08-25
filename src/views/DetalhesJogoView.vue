@@ -2,7 +2,7 @@
   <div class="detalhes-jogo-view">
     <div class="navigation-links">
       <router-link :to="previousPath" class="nav-link">
-        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+        <span class="icon"><AppIcon name="arrow-left" :size="16" /></span>
         Voltar
       </router-link>
     </div>
@@ -26,7 +26,7 @@
 
         <div class="match-details">
           <div class="stadium">
-            <i class="fas fa-stadium"></i>
+            <AppIcon name="stadium" :size="16" />
             <span>{{ fixture?.stadium }}</span>
           </div>
         </div>
@@ -114,10 +114,11 @@
             <div v-for="comment in comments" :key="comment.id" class="timeline-item">
               <div class="timeline-marker">
                 <span class="minute">{{ comment.minute }}'</span>
-                <i
-                  :class="getCommentIcon(comment.type)"
+                <AppIcon
+                  :name="getCommentIcon(comment.type)"
+                  :size="16"
                   :style="{ color: getCommentColor(comment.type) }"
-                ></i>
+                />
               </div>
               <div class="timeline-content">
                 <p>{{ comment.text }}</p>
@@ -137,6 +138,7 @@ import { doc, getDoc, getDocs, collection, query, orderBy, onSnapshot } from 'fi
 import { db, auth } from '@/firebaseConfig'
 import { useMatchSimulation } from '@/services/matchEngine'
 import { computeRatings, applyLineup, type PlayerLike, type Tactic } from '@/services/teamRatings'
+import AppIcon from '@/components/AppIcon.vue'
 
 interface Comment {
   id: string
@@ -340,25 +342,25 @@ const fetchComments = (fixtureId: string) => {
 const getCommentIcon = (type: string) => {
   switch (type) {
     case 'goal':
-      return 'fas fa-futbol'
+      return 'ball'
     case 'card':
-      return 'fas fa-square'
+      return 'card'
     case 'substitution':
-      return 'fas fa-retweet'
+      return 'sub'
     case 'kickOff':
     case 'halfTime':
     case 'fullTime':
-      return 'fas fa-whistle'
+      return 'whistle'
     case 'corner':
-      return 'fas fa-flag-corner'
+      return 'corner'
     case 'shot':
-      return 'fas fa-bullseye'
+      return 'target'
     case 'save':
-      return 'fas fa-hand-paper'
+      return 'save'
     case 'foul':
-      return 'fas fa-exclamation-triangle'
+      return 'alert'
     default:
-      return 'fas fa-circle'
+      return 'dot'
   }
 }
 

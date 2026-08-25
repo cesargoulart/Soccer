@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AuthView from '../views/AuthView.vue'
-import { getAuth } from 'firebase/auth'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -80,16 +80,41 @@ const router = createRouter({
   ]
 })
 
-// Navigation guard
-router.beforeEach((to, from, next) => {
-  const auth = getAuth()
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+// O Firebase restaura a sessão de forma assíncrona. Sem esperar por isso,
+// `auth.currentUser` é null no primeiro carregamento e o utilizador é atirado
+// para a página de login mesmo estando autenticado (ex.: F5 em /clube).
+// Esperamos apenas uma vez; depois lemos sempre o valor actual.
+let authInitialized = false
+let authInitPromise: Promise<void> | null = null
 
-  if (requiresAuth && !auth.currentUser) {
-    next('/')
-  } else {
-    next()
+function waitForAuthInit(): Promise<void> {
+  if (authInitialized) return Promise.resolve()
+  if (!authInitPromise) {
+    authInitPromise = new Promise<void>((resolve) => {
+      const unsubscribe = onAuthStateChanged(getAuth(), () => {
+        unsubscribe()
+        authInitialized = true
+        resolve()
+      })
+    })
   }
+  return authInitPromise
+}
+
+// Navigation guard
+router.beforeEach(async (to) => {
+  await waitForAuthInit()
+
+  const user = getAuth().currentUser
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+
+  // Sem sessão iniciada, as páginas do jogo mandam de volta para o login
+  if (requiresAuth && !user) return { name: 'auth' }
+
+  // Com sessão iniciada, a página de autenticação salta logo para o Clube
+  if (to.name === 'auth' && user) return { name: 'clube' }
+
+  return true
 })
 
 export default router
