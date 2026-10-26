@@ -13,3 +13,9 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+/* Menus v2: todas as páginas assentam no fundo do shell (em vez de pintarem o seu próprio) */
+.main-content [class$='-view'] {
+  background: transparent !important;
+  min-height: 0 !important;
+}

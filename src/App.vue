@@ -2,17 +2,31 @@
 import { RouterView } from 'vue-router'
 import LeftSidebar from './components/LeftSidebar.vue'
 import TopBar from './components/TopBar.vue'
+import Toast from './components/ui/Toast.vue'
 import { ref, watch, onMounted } from 'vue'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
 const isAuthenticated = ref(false)
 const sidebarOpen = ref(false)
+const showWelcome = ref(false)
 
 onMounted(() => {
   const auth = getAuth()
   onAuthStateChanged(auth, (user) => {
     isAuthenticated.value = !!user
     if (!user) sidebarOpen.value = false
+    // Toast de boas-vindas: uma vez por sessão do browser
+    if (user) {
+      try {
+        if (!sessionStorage.getItem('welcomeShown')) {
+          sessionStorage.setItem('welcomeShown', '1')
+          showWelcome.value = true
+          setTimeout(() => (showWelcome.value = false), 4600)
+        }
+      } catch {
+        /* sessionStorage indisponível: sem toast */
+      }
+    }
   })
 })
 
@@ -27,6 +41,7 @@ watch(sidebarOpen, (open) => {
     <LeftSidebar v-if="isAuthenticated" :open="sidebarOpen" @close="sidebarOpen = false" />
     <div class="main-wrapper" :class="{ 'with-sidebar': isAuthenticated }">
       <TopBar v-if="isAuthenticated" @toggle-menu="sidebarOpen = !sidebarOpen" />
+      <Toast v-if="showWelcome" message="Bem-vindo, mister" />
       <main class="main-content">
         <RouterView />
       </main>

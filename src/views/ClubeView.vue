@@ -1,9 +1,9 @@
 <template>
   <div class="clube-view">
-    <h1 class="title">Clube</h1>
     <div class="content-wrapper">
       <template v-if="loading"></template>
       <template v-else-if="clube">
+        <ClubOverview />
         <div class="info-card animate-slide-in">
           <div class="info-card-header">
             <h2>{{ clube.nome }}</h2>
@@ -148,6 +148,7 @@ import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, Time
 import { db } from '@/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import AddClube from '@/components/AddClube.vue';
+import ClubOverview from '@/components/ClubOverview.vue';
 
 // Interface for completed fixtures (similar to JogosView)
 interface CompletedFixture {

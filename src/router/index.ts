@@ -63,6 +63,20 @@ const router = createRouter({
       path: '/tatica',
       name: 'tatica',
       component: () => import('../views/TaticaView.vue'),
+      props: { modo: 'taticas' },
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tatica/onze',
+      name: 'onze',
+      component: () => import('../views/TaticaView.vue'),
+      props: { modo: 'onze' },
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/bilhetes',
+      name: 'bilhetes',
+      component: () => import('../views/BilhetesView.vue'),
       meta: { requiresAuth: true }
     },
     {

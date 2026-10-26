@@ -38,6 +38,9 @@ const paths: Record<string, string> = {
   save: '<path d="M8.5 12.5V6.2a1.6 1.6 0 0 1 3.2 0v5"/><path d="M11.7 11.2V4.8a1.6 1.6 0 0 1 3.2 0v6.4"/><path d="M14.9 11.2V6.6a1.6 1.6 0 0 1 3.2 0V14a6 6 0 0 1-6 6h-.8a5 5 0 0 1-4.4-2.6l-2-3.6a1.6 1.6 0 0 1 2.6-1.9l1.4 1.7"/>',
   alert:
     '<path d="M12 4.2l8.6 15.3H3.4z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none"/>',
+  bag: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  ticket: '<path d="M4 8a2 2 0 0 0 0 4v0a2 2 0 0 0 0 4v1.5h16V16a2 2 0 0 0 0-4v0a2 2 0 0 0 0-4V6.5H4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
+  news: '<rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.5"/>',
   dot: '<circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/>',
 }
 

@@ -3,46 +3,60 @@
   <div class="sidebar-overlay" :class="{ visible: open }" @click="emit('close')"></div>
 
   <aside class="sidebar" :class="{ open }">
-    <!-- Brand -->
     <div class="sidebar-brand">
-      <div class="brand-logo">
-        <AppIcon name="ball" :size="22" />
-      </div>
-      <div class="brand-text">
-        <span class="brand-name">Soccer</span>
-        <span class="brand-tagline">Manager</span>
-      </div>
+      <span class="brand-logo"><AppIcon name="ball" :size="18" /></span>
+      <span class="brand-name">Soccer</span>
       <button class="drawer-close" aria-label="Fechar menu" @click="emit('close')">
         <AppIcon name="close" :size="20" />
       </button>
     </div>
 
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
-      <span class="nav-section-label">Navegação</span>
+    <nav class="sidebar-nav" aria-label="Navegação principal">
+      <template v-for="g in MENU" :key="g.group">
+        <div class="grp">{{ g.group }}</div>
+        <template v-for="it in g.items" :key="it.id">
+          <button
+            class="item"
+            :class="{ open: openId === it.id }"
+            :aria-expanded="openId === it.id"
+            @click="toggle(it.id)"
+          >
+            <AppIcon :name="it.icon" :size="20" />
+            <span class="item-label">{{ it.label }}</span>
+            <span class="chev"></span>
+          </button>
+          <div class="sub" :class="{ open: openId === it.id }">
+            <div>
+              <router-link
+                v-for="s in it.sub"
+                :key="s.to"
+                :to="s.to"
+                :tabindex="openId === it.id ? 0 : -1"
+                :class="{ cur: current?.sub.to === s.to }"
+              >
+                {{ s.label }}
+              </router-link>
+            </div>
+          </div>
+        </template>
+      </template>
 
-      <router-link v-for="item in navItems" :key="item.to" :to="item.to" class="nav-item">
-        <span class="nav-icon"><AppIcon :name="item.icon" :size="17" /></span>
-        <span class="nav-label">{{ item.label }}</span>
-        <span class="nav-dot"></span>
-      </router-link>
+      <div class="side-foot">
+        <button class="item logout" @click="logout">
+          <AppIcon name="logout" :size="20" />
+          <span class="item-label">Terminar sessão</span>
+        </button>
+      </div>
     </nav>
-
-    <!-- Footer -->
-    <div class="sidebar-footer">
-      <button @click="logout" class="logout-btn">
-        <span class="nav-icon"><AppIcon name="logout" :size="17" /></span>
-        <span>Terminar Sessão</span>
-      </button>
-    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getAuth, signOut } from 'firebase/auth'
 import { useRouter, useRoute } from 'vue-router'
 import AppIcon from './AppIcon.vue'
+import { MENU, findMenuEntry } from '@/config/menu'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
@@ -50,34 +64,55 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 const router = useRouter()
 const route = useRoute()
 
-const navItems = [
-  { to: '/clube', label: 'Clube', icon: 'shield' },
-  { to: '/equipa', label: 'Equipa', icon: 'users' },
-  { to: '/jogos', label: 'Jogos', icon: 'ball' },
-  { to: '/tatica', label: 'Tática', icon: 'pitch' },
-  { to: '/treino', label: 'Treino', icon: 'dumbbell' },
-  { to: '/economy', label: 'Economia', icon: 'chart' },
-  { to: '/transfers', label: 'Transferências', icon: 'swap' },
-  { to: '/jovens', label: 'Jovens', icon: 'seedling' },
-]
+const STORAGE_KEY = 'menuV2.open'
+const read = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+const write = (v: string | null) => {
+  try {
+    if (v) localStorage.setItem(STORAGE_KEY, v)
+    else localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* sem armazenamento: o acordeão continua a funcionar */
+  }
+}
 
-// No telemóvel o menu fecha-se assim que se escolhe uma página
+const current = computed(() => findMenuEntry(route.path))
+
+// Acordeão: só um item aberto de cada vez; clicar no aberto fecha-o.
+const openId = ref<string | null>(current.value?.item.id ?? read())
+
+function toggle(id: string) {
+  openId.value = openId.value === id ? null : id
+  write(openId.value)
+}
+
+// Navegar (ou carregar a página diretamente) abre o grupo da rota atual
 watch(
-  () => route.fullPath,
-  () => emit('close'),
+  () => route.path,
+  () => {
+    const entry = findMenuEntry(route.path)
+    if (entry) {
+      openId.value = entry.item.id
+      write(openId.value)
+    }
+    emit('close') // no telemóvel o menu fecha-se ao escolher uma página
+  },
 )
 
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' && props.open) emit('close')
 }
-
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 const logout = async () => {
-  const auth = getAuth()
   try {
-    await signOut(auth)
+    await signOut(getAuth())
     router.push('/')
   } catch (error) {
     console.error('Logout failed:', error)
@@ -94,236 +129,160 @@ const logout = async () => {
   height: 100dvh;
   width: var(--sidebar-width);
   background: var(--surface-sidebar);
-  border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   z-index: 100;
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
 }
-
-.sidebar-overlay {
-  display: none;
-}
-
+.sidebar-overlay,
 .drawer-close {
   display: none;
 }
 
-/* Brand */
 .sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 26px 22px;
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.brand-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, var(--accent), var(--vt-c-indigo));
+  height: var(--topbar-height);
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 4px 14px var(--accent-glow);
-  flex-shrink: 0;
-  transition: box-shadow 0.3s ease;
-}
-
-.sidebar-brand:hover .brand-logo {
-  box-shadow: 0 6px 20px var(--accent-glow);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-
-.brand-name {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--vt-c-text-dark-1);
-  letter-spacing: 0.3px;
-  margin-bottom: 4px;
-}
-
-.brand-tagline {
-  font-size: 0.67rem;
-  color: var(--accent-light);
-  font-weight: 600;
+  gap: 10px;
+  background: oklch(0.5 0.09 145 / 0.55);
+  font-family: var(--font-brand);
+  font-size: 22px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 1.8px;
+  color: var(--ink);
+}
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  display: grid;
+  place-items: center;
 }
 
-/* Nav */
 .sidebar-nav {
   flex: 1;
-  padding: 20px 14px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  scrollbar-width: none;
 }
-
 .sidebar-nav::-webkit-scrollbar {
-  width: 3px;
+  display: none;
 }
 
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background: var(--border-accent);
-  border-radius: 10px;
-}
-
-.nav-section-label {
-  display: block;
-  font-size: 0.63rem;
+.grp {
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 1.8px;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 0 10px;
-  margin-bottom: 10px;
-  flex-shrink: 0;
+  color: var(--dim);
+  padding: 16px 6px 6px;
 }
 
-.nav-item {
+.item {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.78);
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  position: relative;
-  border: 1px solid transparent;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s;
 }
-
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.85);
+.item:hover {
+  background: oklch(0.5 0.06 150 / 0.25);
 }
-
-.nav-item:hover .nav-icon {
-  background: rgba(46, 207, 133, 0.15);
-  color: var(--accent-light);
+.item :deep(svg) {
+  flex: none;
 }
-
-.nav-item.router-link-active {
-  background: rgba(255, 255, 255, 0.16);
-  color: var(--vt-c-text-dark-1);
-  border-color: var(--border-accent);
-}
-
-.nav-item.router-link-active .nav-icon {
-  background: rgba(46, 207, 133, 0.25);
-  color: var(--accent-light);
-}
-
-/* Nav icon box */
-.nav-icon {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.35);
-  flex-shrink: 0;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease;
-}
-
-.nav-label {
+.item-label {
   flex: 1;
 }
-
-/* Active indicator dot */
-.nav-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent-light);
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  flex-shrink: 0;
+.chev {
+  width: 7px;
+  height: 7px;
+  border-left: 2px solid var(--mute);
+  border-bottom: 2px solid var(--mute);
+  transform: rotate(45deg);
+  transition: transform 0.25s;
+}
+.item.open {
+  background: oklch(0.5 0.06 150 / 0.3);
+  border-radius: 4px 4px 0 0;
+}
+.item.open .chev {
+  transform: rotate(-45deg);
 }
 
-.nav-item.router-link-active .nav-dot {
-  opacity: 1;
+/* Altura animada sem medir em JS: grid-template-rows 0fr -> 1fr */
+.sub {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
 }
-
-/* Footer */
-.sidebar-footer {
-  padding: 14px;
-  padding-bottom: calc(14px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--border-subtle);
-  flex-shrink: 0;
+.sub.open {
+  grid-template-rows: 1fr;
 }
-
-.logout-btn {
-  width: 100%;
+.sub > div {
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: rgba(239, 68, 68, 0.65);
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-family: inherit;
+  flex-direction: column;
+  background: oklch(0.5 0.06 150 / 0.18);
+  border-radius: 0 0 4px 4px;
+}
+.sub a {
+  padding: 10px 16px;
   font-weight: 500;
+  color: var(--mute);
   transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease;
+    background 0.2s,
+    color 0.2s,
+    padding 0.2s;
+}
+.sub a:hover {
+  color: var(--ink);
+  padding-left: 20px;
+}
+.sub a.cur {
+  color: var(--ink);
+  font-weight: 600;
+  background: oklch(0.62 0.05 150 / 0.35);
 }
 
-.logout-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.4);
+.side-foot {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.logout {
+  color: oklch(0.8 0.12 25);
 }
 
-.logout-btn .nav-icon {
-  background: rgba(239, 68, 68, 0.08);
-  color: inherit;
-}
-
-.logout-btn:hover .nav-icon {
-  background: rgba(239, 68, 68, 0.18);
-}
-
-/* ------------------------------------------------------------------ */
-/* Telemóvel / tablet: a barra passa a gaveta que desliza por cima     */
-/* ------------------------------------------------------------------ */
+/* Telemóvel / tablet: a barra passa a gaveta que desliza por cima */
 @media (max-width: 900px) {
   .sidebar {
     width: min(280px, 84vw);
     transform: translateX(-100%);
     transition: transform 0.28s ease;
     will-change: transform;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.35);
   }
-
   .sidebar.open {
     transform: translateX(0);
   }
-
   .sidebar-overlay {
     display: block;
     position: fixed;
@@ -335,34 +294,27 @@ const logout = async () => {
     pointer-events: none;
     transition: opacity 0.28s ease;
   }
-
   .sidebar-overlay.visible {
     opacity: 1;
     pointer-events: auto;
   }
-
   .sidebar-brand {
-    padding: 18px 18px;
+    position: relative;
   }
-
   .drawer-close {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
+    position: absolute;
+    right: 12px;
     width: 34px;
     height: 34px;
-    border-radius: 9px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-subtle);
-    color: rgba(255, 255, 255, 0.55);
+    border-radius: 4px;
+    background: oklch(0.5 0.06 150 / 0.3);
+    border: 0;
+    color: var(--ink);
     cursor: pointer;
     padding: 0;
-  }
-
-  .nav-item {
-    padding: 12px;
-    font-size: 0.95rem;
   }
 }
 </style>

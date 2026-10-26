@@ -22,7 +22,7 @@
   --vt-c-text-dark-2: rgba(240, 240, 240, 0.72);
 
   /* App layout */
-  --sidebar-width: 260px;
+  --sidebar-width: 248px;
   --topbar-height: 64px;
 
   /* Brand accent */
@@ -32,14 +32,34 @@
   --accent-glow: rgba(46, 207, 133, 0.35);
 
   /* Surface colors */
-  --surface-sidebar: linear-gradient(180deg, rgba(120, 175, 100, 0.35) 0%, rgba(8, 48, 36, 0.92) 28%, rgba(3, 28, 22, 0.97) 100%);
-  --surface-topbar: rgba(120, 175, 100, 0.28);
+  --surface-sidebar: linear-gradient(oklch(0.34 0.06 155 / 0.7), oklch(0.14 0.03 170 / 0.9));
+  --surface-topbar: oklch(0.55 0.09 140 / 0.35);
   --surface-card: rgba(3, 30, 22, 0.55);
   --surface-card-hover: rgba(3, 30, 22, 0.7);
 
   /* Border colors */
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-accent: rgba(46, 207, 133, 0.25);
+}
+
+
+/* Menus v2 — design tokens */
+:root {
+  --ink: oklch(0.97 0.01 140);
+  --mute: oklch(0.82 0.03 150);
+  --dim: oklch(0.68 0.03 155);
+  --card: oklch(0.3 0.05 155 / 0.55);
+  --card2: oklch(0.36 0.06 150 / 0.6);
+  --line: oklch(0.55 0.05 150 / 0.25);
+  --rev: oklch(0.62 0.11 145);
+  --exp: oklch(0.66 0.19 25);
+  --ok: oklch(0.72 0.17 150);
+  --gk: oklch(0.28 0.02 160);
+  --df: oklch(0.55 0.17 255);
+  --mf: oklch(0.52 0.1 170);
+  --fw: oklch(0.6 0.2 25);
+  --font-ui: 'Chakra Petch', system-ui, sans-serif;
+  --font-brand: 'Oswald', 'Chakra Petch', sans-serif;
 }
 
 /* semantic color variables for this project */
@@ -88,7 +108,7 @@ body {
     color 0.8s ease;
   line-height: 1.6;
   font-family:
-    'Exo 2', 'Inter',
+    'Chakra Petch', 'Exo 2', 'Inter',
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
@@ -100,11 +120,11 @@ body {
     'Droid Sans',
     'Helvetica Neue',
     sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(180deg, #5f9a52 0%, #2c7a4a 22%, #12503a 55%, #052a21 100%) fixed;
+  background: radial-gradient(120% 70% at 55% -10%, oklch(0.62 0.1 140) 0%, oklch(0.42 0.08 150) 35%, oklch(0.24 0.05 165) 75%, oklch(0.16 0.03 170) 100%) fixed;
   letter-spacing: 0.2px;
   overflow-x: hidden;
 }
@@ -118,11 +138,23 @@ body {
   --star: #ffd24a;
 }
 
-h1, h2, h3, .title { font-family: 'Exo 2', sans-serif; letter-spacing: 0.4px; }
+h1, h2, h3, .title { font-family: var(--font-ui); letter-spacing: 0.4px; }
 
 table th {
   text-transform: uppercase;
   font-size: 0.72rem;
   letter-spacing: 1.2px;
   color: rgba(255, 255, 255, 0.75);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
 }

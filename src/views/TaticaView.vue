@@ -1,35 +1,29 @@
 <template>
   <div class="tatica-view">
-    <h1 class="title">Tática</h1>
-
     <div class="content-wrapper">
-      <!-- Formação (chips compactos) -->
-      <div class="tactic-card animate-in">
-        <div class="card-head">
-          <h2>Formação</h2>
-          <span class="hint">Muda a formação para redesenhar as posições no campo</span>
-        </div>
-        <div class="formation-grid">
-          <div
-            v-for="f in formations"
-            :key="f.id"
-            class="formation-option"
-            :class="{ active: selectedFormacao === f.id }"
-            @click="selectedFormacao = f.id"
-          >
-            <div class="formation-pitch">
-              <div v-for="(row, i) in f.rows" :key="i" class="pitch-row">
-                <span v-for="j in row" :key="j" class="player-dot"></span>
-              </div>
-            </div>
-            <div class="formation-label">{{ f.id }}</div>
-            <div class="formation-desc">{{ f.desc }}</div>
+      <!-- Táticas: botões de formação + campo com as 11 posições animadas -->
+      <div v-if="modo === 'taticas'" class="split screen-in">
+        <Card title="Formação" :index="0">
+          <div class="forms">
+            <button
+              v-for="f in formations"
+              :key="f.id"
+              type="button"
+              :class="{ cur: selectedFormacao === f.id }"
+              :title="f.desc"
+              @click="selectedFormacao = f.id"
+            >
+              {{ f.id }}
+            </button>
           </div>
-        </div>
+        </Card>
+        <Card :index="1">
+          <Pitch :chips="chips" />
+        </Card>
       </div>
 
       <!-- Campo + plantel -->
-      <div class="board animate-in" style="animation-delay: 0.05s">
+      <div v-if="modo === 'onze'" class="board screen-in">
         <!-- Campo -->
         <div class="tactic-card pitch-card">
           <div class="card-head">
@@ -147,27 +141,38 @@
           <p v-else-if="!players.length" class="bench-msg">
             Ainda não tens jogadores. Cria o clube na página Clube.
           </p>
-          <p v-else-if="!bench.length" class="bench-msg">Todos os jogadores estão no campo.</p>
 
-          <ul v-else class="bench-list">
-            <li
-              v-for="p in bench"
-              :key="p.id"
-              class="bench-item"
-              :class="{ picked: selectedId === p.id }"
-              draggable="true"
-              @dragstart="onDragStart($event, p.id, null)"
-              @dragend="clearDrag"
-              @click="onBenchClick(p.id)"
-            >
-              <span class="bench-num">{{ p.number ?? '–' }}</span>
-              <span class="bench-info">
-                <span class="bench-name">{{ p.name }}</span>
-                <span class="bench-pos">{{ p.position }}</span>
-              </span>
-              <span class="bench-ovr">{{ p.overall }}</span>
-            </li>
-          </ul>
+          <div v-else class="roster-scroll">
+            <table class="roster">
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Nome</th>
+                  <th class="n">Méd</th>
+                  <th class="n">Idade</th>
+                  <th>Qual</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(p, i) in rosterRows"
+                  :key="p.id"
+                  :class="[slotOf(p.id) ? 'tit' : 'res', { picked: selectedId === p.id }]"
+                  :style="{ '--i': i }"
+                  draggable="true"
+                  @dragstart="onDragStart($event, p.id, slotOf(p.id))"
+                  @dragend="clearDrag"
+                  @click="onBenchClick(p.id)"
+                >
+                  <td><PosTag :position="p.position" /></td>
+                  <td>{{ p.name }}</td>
+                  <td class="n"><span>{{ p.overall }}</span></td>
+                  <td class="n"><span>{{ p.age ?? '—' }}</span></td>
+                  <td><Stars :value="p.overall" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <p class="bench-tip">
             Arrasta um jogador para o campo — ou toca no jogador e depois na posição.
@@ -176,7 +181,7 @@
       </div>
 
       <!-- Estilo -->
-      <div class="tactic-card animate-in" style="animation-delay: 0.1s">
+      <div v-if="modo === 'taticas'" class="tactic-card rise" style="--i: 2">
         <h2>Estilo de Jogo</h2>
         <div class="style-grid">
           <div
@@ -218,6 +223,10 @@ import {
   type FormationSlot,
 } from '@/services/formations'
 import { positionGroup, computeRatings, applyLineup, type PlayerLike } from '@/services/teamRatings'
+import Card from '@/components/ui/Card.vue'
+import PosTag from '@/components/ui/PosTag.vue'
+import Stars from '@/components/ui/Stars.vue'
+import Pitch from '@/components/charts/Pitch.vue'
 
 interface SquadPlayer {
   id: string
@@ -227,6 +236,9 @@ interface SquadPlayer {
   number?: number
   age?: number
 }
+
+// 'taticas': escolher formação/estilo · 'onze': montar o onze (definido na rota)
+withDefaults(defineProps<{ modo?: 'taticas' | 'onze' }>(), { modo: 'taticas' })
 
 const formations = FORMATIONS
 
@@ -263,6 +275,19 @@ const slots = computed(() => getFormation(selectedFormacao.value).slots)
 const playersById = computed(() => new Map(players.value.map((p) => [p.id, p])))
 
 const usedIds = computed(() => new Set(Object.values(lineup.value)))
+
+// Chips do campo (Táticas): índice estável 0-10, só mudam posição/etiqueta
+const chips = computed(() => slots.value.map((sl) => ({ label: sl.label, group: sl.group, x: sl.x, y: sl.y })))
+
+function slotOf(playerId: string): string | null {
+  return Object.keys(lineup.value).find((k) => lineup.value[k] === playerId) ?? null
+}
+
+// Tabela do Onze inicial: titulares primeiro, depois suplentes por rating
+const rosterRows = computed(() => {
+  const starters = players.value.filter((p) => usedIds.value.has(p.id)).sort((a, b) => b.overall - a.overall)
+  return [...starters, ...bench.value]
+})
 
 const bench = computed(() =>
   players.value.filter((p) => !usedIds.value.has(p.id)).sort((a, b) => b.overall - a.overall),
@@ -516,8 +541,6 @@ onUnmounted(() => {
 .tatica-view {
   padding: 20px;
   color: #fff;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0a2e24 0%, #124436 100%);
 }
 
 .title {
@@ -1155,4 +1178,58 @@ onUnmounted(() => {
   opacity: 0;
   animation: slideIn 0.5s ease forwards;
 }
+
+/* ------------------------------------------------------------ Menus v2 */
+.content-wrapper { max-width: none; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.forms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.forms button {
+  height: 94px;
+  border-radius: 4px;
+  background: var(--card2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
+}
+.forms button:hover { border-color: var(--ink); transform: translateY(-2px); }
+.forms button.cur {
+  border-color: oklch(0.85 0.15 120);
+  background: oklch(0.3 0.06 155 / 0.8);
+  box-shadow: 0 0 18px oklch(0.85 0.15 120 / 0.25);
+}
+.tactic-card {
+  background: var(--card);
+  border: 0;
+  border-radius: 6px;
+  padding: 18px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px oklch(0.1 0.03 170 / 0.25);
+}
+.tactic-card h2 { color: var(--ink); font-size: 16px; font-weight: 600; }
+.roster-scroll { max-height: 640px; overflow: auto; }
+.roster { width: 100%; border-collapse: collapse; }
+.roster th { font-size: 12px; font-weight: 600; text-align: left; padding: 4px 8px 12px; color: var(--mute); text-transform: none; letter-spacing: 0; }
+.roster td { padding: 6px 8px; border-bottom: 1px solid var(--line); font-weight: 500; white-space: nowrap; }
+.roster td.n, .roster th.n { text-align: center; }
+.roster td.n span { background: oklch(0.45 0.05 150 / 0.6); padding: 2px 6px; border-radius: 2px; font-size: 12px; font-weight: 600; }
+.roster tbody tr { opacity: 0; animation: rowin 0.4s ease forwards; animation-delay: calc(var(--i) * 35ms); cursor: grab; }
+.roster tbody tr:hover td { background: oklch(0.55 0.06 150 / 0.2); }
+.roster tr.tit td:first-child { box-shadow: inset 3px 0 oklch(0.82 0.16 125); }
+.roster tr.res td:first-child { box-shadow: inset 3px 0 oklch(0.8 0.15 85); }
+.roster tr.picked td { background: oklch(0.62 0.05 150 / 0.35); }
+@keyframes rowin { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@media (max-width: 1100px) {
+  .split { grid-template-columns: 1fr; }
+  .forms { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .forms { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .forms button { height: 70px; font-size: 24px; }
+}
+.split :deep(.pitch) { max-width: 360px; margin: 0 auto; }
 </style>
