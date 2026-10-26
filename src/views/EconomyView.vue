@@ -116,11 +116,11 @@ td {
 
 th {
   background-color: #222; /* Darker header background */
-  color: #646cff; /* Accent color for headers */
+  color: #2ecf85; /* Accent color for headers */
 }
 
 tr:hover {
-  background-color: #1a1a1a; /* Darker hover effect */
+  background-color: #0a2e24; /* Darker hover effect */
 }
 
 tbody tr:last-child {
@@ -140,7 +140,7 @@ tbody tr:last-child {
 }
 
 h1 {
-  color: #646cff; /* Accent color */
+  color: #2ecf85; /* Accent color */
   margin-bottom: 20px;
 }
 

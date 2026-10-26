@@ -349,14 +349,14 @@ onUnmounted(() => {
   padding: 20px;
   color: #fff;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #0a2e24 0%, #124436 100%);
 }
 
 .title {
   font-size: 2.5em;
   margin-bottom: 30px;
   text-align: center;
-  background: linear-gradient(45deg, #646cff, #a855f7);
+  background: linear-gradient(45deg, #2ecf85, #1fa56a);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -385,7 +385,7 @@ onUnmounted(() => {
 
 .staff-input:focus {
   outline: none;
-  border-color: #646cff;
+  border-color: #2ecf85;
 }
 
 .btn-save-staff {
@@ -393,7 +393,7 @@ onUnmounted(() => {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(45deg, #646cff, #a855f7);
+  background: linear-gradient(45deg, #2ecf85, #1fa56a);
   color: #fff;
   font-weight: 600;
   cursor: pointer;
@@ -420,7 +420,7 @@ onUnmounted(() => {
 
 .squad-section,
 .staff-section {
-  background: rgba(45, 45, 45, 0.7);
+  background: rgba(5, 38, 29, 0.6);
   border-radius: 15px;
   padding: 25px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -445,7 +445,7 @@ onUnmounted(() => {
 /* Remove .player-card styles */
 .staff-card {
   padding: 20px;
-  background: rgba(30, 30, 30, 0.5);
+  background: rgba(3, 26, 20, 0.55);
   border-radius: 10px;
   transition:
     transform 0.3s ease,
@@ -475,8 +475,8 @@ onUnmounted(() => {
 }
 
 .player-table th {
-  background-color: rgba(64, 76, 255, 0.2);
-  color: #a8b4ff;
+  background-color: rgba(46, 207, 133, 0.2);
+  color: #a6f2cc;
   font-weight: bold;
   text-transform: uppercase;
   font-size: 0.9em;
@@ -491,7 +491,7 @@ onUnmounted(() => {
 }
 
 .player-table tbody tr:hover {
-  background-color: rgba(100, 108, 255, 0.1);
+  background-color: rgba(46, 207, 133, 0.1);
   transform: scale(1.01);
   transition: all 0.3s ease;
 }
@@ -512,13 +512,13 @@ onUnmounted(() => {
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, #124436 0%, #0a2e24 100%);
   padding: 30px;
   border-radius: 15px;
   min-width: 400px;
   position: relative;
-  border: 1px solid rgba(100, 108, 255, 0.3);
-  box-shadow: 0 0 30px rgba(100, 108, 255, 0.2);
+  border: 1px solid rgba(46, 207, 133, 0.3);
+  box-shadow: 0 0 30px rgba(46, 207, 133, 0.2);
 }
 
 .animate-modal {
@@ -538,7 +538,7 @@ onUnmounted(() => {
 }
 
 .player-details strong {
-  color: #646cff;
+  color: #2ecf85;
   margin-right: 10px;
 }
 
@@ -558,14 +558,14 @@ onUnmounted(() => {
 
 .price-input-group label {
   font-weight: bold;
-  color: #a8b4ff;
+  color: #a6f2cc;
   font-size: 0.9em;
 }
 
 .price-input {
   padding: 10px;
   border-radius: 6px;
-  border: 1px solid rgba(100, 108, 255, 0.3);
+  border: 1px solid rgba(46, 207, 133, 0.3);
   background-color: rgba(30, 30, 30, 0.8);
   color: #e0e0e0;
   font-size: 1em;
@@ -576,8 +576,8 @@ onUnmounted(() => {
 
 .price-input:focus {
   outline: none;
-  border-color: #646cff;
-  box-shadow: 0 0 8px rgba(100, 108, 255, 0.3);
+  border-color: #2ecf85;
+  box-shadow: 0 0 8px rgba(46, 207, 133, 0.3);
 }
 
 /* Hide number input arrows */
@@ -625,7 +625,7 @@ onUnmounted(() => {
   right: 15px;
   background: none;
   border: none;
-  color: #646cff;
+  color: #2ecf85;
   font-size: 24px;
   cursor: pointer;
   width: 30px;
@@ -638,7 +638,7 @@ onUnmounted(() => {
 }
 
 .btn-close:hover {
-  background: rgba(100, 108, 255, 0.1);
+  background: rgba(46, 207, 133, 0.1);
   transform: rotate(90deg);
 }
 
@@ -656,7 +656,7 @@ onUnmounted(() => {
 .player-table td:first-child {
   /* Style player number */
   font-weight: bold;
-  color: #646cff;
+  color: #2ecf85;
   text-align: center;
   width: 50px; /* Fixed width for number column */
 }
@@ -664,15 +664,15 @@ onUnmounted(() => {
 h2 {
   font-size: 1.8em;
   margin-bottom: 20px;
-  color: #646cff;
+  color: #2ecf85;
 }
 
 h3 {
   font-size: 1.2em;
-  color: #a855f7;
+  color: #1fa56a;
   /* Staff card title */
   font-size: 1.2em;
-  color: #a855f7;
+  color: #1fa56a;
   margin-bottom: 10px;
 }
 

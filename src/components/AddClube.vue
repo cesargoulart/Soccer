@@ -81,7 +81,7 @@ const handleSubmit = async (e: Event) => {
 
 <style scoped>
 .add-clube-form {
-  background: rgba(45, 45, 45, 0.7);
+  background: rgba(5, 38, 29, 0.6);
   border-radius: 15px;
   padding: 25px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -103,7 +103,7 @@ const handleSubmit = async (e: Event) => {
 .input-field {
   width: 100%;
   padding: 12px;
-  background: rgba(30, 30, 30, 0.5);
+  background: rgba(3, 26, 20, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   color: #fff;
@@ -118,14 +118,14 @@ const handleSubmit = async (e: Event) => {
 
 .input-field:focus {
   outline: none;
-  border-color: #646cff;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+  border-color: #2ecf85;
+  box-shadow: 0 0 0 2px rgba(46, 207, 133, 0.2);
 }
 
 .submit-btn {
   position: relative;
   padding: 12px 24px;
-  background: linear-gradient(45deg, #646cff, #a855f7);
+  background: linear-gradient(45deg, #2ecf85, #1fa56a);
   border: none;
   border-radius: 8px;
   color: #fff;

@@ -386,7 +386,7 @@ const getCommentColor = (type: string) => {
     case 'foul':
       return '#FF4500'
     default:
-      return '#646cff'
+      return '#2ecf85'
   }
 }
 </script>
@@ -493,7 +493,7 @@ const getCommentColor = (type: string) => {
 .match-stats h4 {
   text-align: center;
   margin-bottom: 15px;
-  color: #646cff;
+  color: #2ecf85;
   font-size: 18px;
 }
 
@@ -519,7 +519,7 @@ const getCommentColor = (type: string) => {
 }
 
 .stat-home-value {
-  color: #646cff;
+  color: #2ecf85;
 }
 
 .stat-away-value {
@@ -542,7 +542,7 @@ const getCommentColor = (type: string) => {
 }
 
 .stat-bar.home {
-  background: linear-gradient(90deg, #646cff, #8f8fff);
+  background: linear-gradient(90deg, #2ecf85, #6ee7b0);
 }
 
 .stat-bar.away {
@@ -559,7 +559,7 @@ const getCommentColor = (type: string) => {
 }
 
 .commentary-section h3 {
-  color: #646cff;
+  color: #2ecf85;
   margin-bottom: 20px;
   text-align: center;
   font-size: 20px;
@@ -612,10 +612,10 @@ const getCommentColor = (type: string) => {
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 5px rgba(100, 108, 255, 0.3);
+    box-shadow: 0 0 5px rgba(46, 207, 133, 0.3);
   }
   100% {
-    box-shadow: 0 0 20px rgba(100, 108, 255, 0.6);
+    box-shadow: 0 0 20px rgba(46, 207, 133, 0.6);
   }
 }
 

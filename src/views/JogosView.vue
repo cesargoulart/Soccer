@@ -757,19 +757,19 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: 12px 24px;
-  background: rgba(100, 108, 255, 0.15);
+  background: rgba(46, 207, 133, 0.15);
   border-radius: 50px;
-  color: #a8b4ff;
+  color: #a6f2cc;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
-  border: 1px solid rgba(100, 108, 255, 0.3);
+  border: 1px solid rgba(46, 207, 133, 0.3);
 }
 
 .nav-link:hover {
-  background: rgba(100, 108, 255, 0.3);
+  background: rgba(46, 207, 133, 0.3);
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(100, 108, 255, 0.2);
+  box-shadow: 0 5px 15px rgba(46, 207, 133, 0.2);
 }
 
 .nav-link .icon {
@@ -790,10 +790,10 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   padding: 7px 16px;
-  background: rgba(100, 108, 255, 0.12);
-  border: 1px solid rgba(100, 108, 255, 0.3);
+  background: rgba(46, 207, 133, 0.12);
+  border: 1px solid rgba(46, 207, 133, 0.3);
   border-radius: 20px;
-  color: #a8b4ff;
+  color: #a6f2cc;
   text-decoration: none;
   font-size: 0.82em;
   font-weight: 500;
@@ -804,10 +804,10 @@ onMounted(async () => {
 }
 
 .view-all-link:hover {
-  background: rgba(100, 108, 255, 0.25);
-  border-color: rgba(168, 180, 255, 0.5);
+  background: rgba(46, 207, 133, 0.25);
+  border-color: rgba(166, 242, 204, 0.5);
   color: #fff;
-  box-shadow: 0 0 14px rgba(100, 108, 255, 0.25);
+  box-shadow: 0 0 14px rgba(46, 207, 133, 0.25);
   transform: translateY(-1px);
 }
 
@@ -886,14 +886,14 @@ onMounted(async () => {
   padding: 20px;
   color: #fff;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #0a2e24 0%, #124436 100%);
 }
 
 .title {
   font-size: 2.5em;
   margin-bottom: 30px;
   text-align: center;
-  background: linear-gradient(45deg, #646cff, #a855f7);
+  background: linear-gradient(45deg, #2ecf85, #1fa56a);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -910,7 +910,7 @@ onMounted(async () => {
 
 .matches-section,
 .results-section {
-  background: rgba(45, 45, 45, 0.7);
+  background: rgba(5, 38, 29, 0.6);
   border-radius: 15px;
   padding: 25px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -930,10 +930,10 @@ onMounted(async () => {
 
 .week-title {
   font-size: 1.5em;
-  color: #a8b4ff;
+  color: #a6f2cc;
   margin-bottom: 15px;
   padding-bottom: 5px;
-  border-bottom: 1px solid rgba(100, 108, 255, 0.3);
+  border-bottom: 1px solid rgba(46, 207, 133, 0.3);
 }
 
 /* Keep .results-section .matches-grid if needed for results cards */
@@ -946,7 +946,7 @@ onMounted(async () => {
 .results-section .match-card {
   /* Style results card */
   padding: 20px;
-  background: rgba(30, 30, 30, 0.5);
+  background: rgba(3, 26, 20, 0.55);
   border-radius: 10px;
   transition:
     transform 0.3s ease,
@@ -972,9 +972,9 @@ onMounted(async () => {
 }
 .results-section .score {
   padding: 5px 10px;
-  background: rgba(100, 108, 255, 0.2);
+  background: rgba(46, 207, 133, 0.2);
   border-radius: 5px;
-  color: #646cff;
+  color: #2ecf85;
 }
 .results-section .match-info {
   display: flex;
@@ -1006,8 +1006,8 @@ onMounted(async () => {
 }
 
 .fixtures-table th {
-  background-color: rgba(64, 76, 255, 0.2);
-  color: #a8b4ff;
+  background-color: rgba(46, 207, 133, 0.2);
+  color: #a6f2cc;
   font-weight: bold;
   text-transform: uppercase;
   font-size: 0.9em;
@@ -1028,14 +1028,14 @@ onMounted(async () => {
 .fixtures-table .vs-cell {
   text-align: center;
   font-weight: bold;
-  color: #646cff;
+  color: #2ecf85;
   padding: 12px 5px; /* Reduce padding for VS */
 }
 
 h2 {
   font-size: 1.8em;
   margin-bottom: 20px;
-  color: #646cff;
+  color: #2ecf85;
 }
 
 .match-status {
@@ -1047,12 +1047,12 @@ h2 {
 .completed {
   /* Keep for results if needed */
   background: rgba(168, 85, 247, 0.2);
-  color: #a855f7;
+  color: #1fa56a;
 }
 .scheduled {
   /* Style for scheduled games in results placeholder */
-  background: rgba(100, 108, 255, 0.2);
-  color: #a8b4ff;
+  background: rgba(46, 207, 133, 0.2);
+  color: #a6f2cc;
 }
 
 @keyframes fadeIn {

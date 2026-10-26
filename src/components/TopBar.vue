@@ -92,7 +92,7 @@ const userInitials = computed(() => {
 }
 
 .menu-btn:hover {
-  background: rgba(124, 58, 237, 0.15);
+  background: rgba(46, 207, 133, 0.15);
   color: var(--accent-light);
 }
 

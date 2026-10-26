@@ -16,7 +16,7 @@ import WeeklyPlayer from '@/components/WeeklyPlayer.vue'
   padding: 20px;
   color: #fff;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #0a2e24 0%, #124436 100%);
   animation: fadeInView 0.5s ease-out;
 }
 

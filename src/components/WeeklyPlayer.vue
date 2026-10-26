@@ -236,7 +236,7 @@ function rejectPlayer() {
 <style scoped>
 /* Original styles remain unchanged */
 .weekly-player {
-  background-color: #1a1a1a;
+  background-color: #0a2e24;
   border-radius: 10px;
   padding: 20px;
   margin: 20px;

@@ -517,7 +517,7 @@ onUnmounted(() => {
   padding: 20px;
   color: #fff;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #0a2e24 0%, #124436 100%);
 }
 
 .title {
@@ -541,7 +541,7 @@ onUnmounted(() => {
 
 .tactic-card {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(100, 108, 255, 0.2);
+  border: 1px solid rgba(46, 207, 133, 0.2);
   border-radius: 20px;
   padding: 24px;
 }
@@ -593,8 +593,8 @@ onUnmounted(() => {
 .btn-mini {
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(100, 108, 255, 0.35);
-  background: rgba(100, 108, 255, 0.12);
+  border: 1px solid rgba(46, 207, 133, 0.35);
+  background: rgba(46, 207, 133, 0.12);
   color: #cdd3ff;
   font-size: 0.78em;
   font-family: inherit;
@@ -604,7 +604,7 @@ onUnmounted(() => {
 }
 
 .btn-mini:hover:not(:disabled) {
-  background: rgba(100, 108, 255, 0.25);
+  background: rgba(46, 207, 133, 0.25);
 }
 
 .btn-mini.ghost {
@@ -792,7 +792,7 @@ onUnmounted(() => {
   line-height: 1;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: #1a1a1a;
+  background: #0a2e24;
   color: rgba(255, 255, 255, 0.7);
   font-size: 12px;
   cursor: pointer;
@@ -821,8 +821,8 @@ onUnmounted(() => {
 
 .slot.over .jersey,
 .slot.target .jersey {
-  border-color: #a8b4ff;
-  box-shadow: 0 0 0 4px rgba(168, 180, 255, 0.35);
+  border-color: #a6f2cc;
+  box-shadow: 0 0 0 4px rgba(166, 242, 204, 0.35);
 }
 
 .slot.selected .jersey {
@@ -871,7 +871,7 @@ onUnmounted(() => {
 
 .rating-item.overall .rating-label,
 .rating-item.overall .rating-value {
-  color: #a8b4ff;
+  color: #a6f2cc;
 }
 
 /* ---------------------------------------------------------------- Plantel */
@@ -884,8 +884,8 @@ onUnmounted(() => {
 }
 
 .bench-card.bench-over {
-  border-color: rgba(100, 108, 255, 0.6);
-  background: rgba(100, 108, 255, 0.07);
+  border-color: rgba(46, 207, 133, 0.6);
+  background: rgba(46, 207, 133, 0.07);
 }
 
 .bench-msg {
@@ -918,8 +918,8 @@ onUnmounted(() => {
 }
 
 .bench-item:hover {
-  border-color: rgba(100, 108, 255, 0.45);
-  background: rgba(100, 108, 255, 0.1);
+  border-color: rgba(46, 207, 133, 0.45);
+  background: rgba(46, 207, 133, 0.1);
 }
 
 .bench-item:active {
@@ -928,8 +928,8 @@ onUnmounted(() => {
 
 .bench-item.picked {
   border-color: var(--vt-c-indigo);
-  background: rgba(100, 108, 255, 0.18);
-  box-shadow: 0 0 12px rgba(100, 108, 255, 0.25);
+  background: rgba(46, 207, 133, 0.18);
+  box-shadow: 0 0 12px rgba(46, 207, 133, 0.25);
 }
 
 .bench-num {
@@ -961,7 +961,7 @@ onUnmounted(() => {
 .bench-ovr {
   font-size: 0.8em;
   font-weight: 700;
-  color: #a8b4ff;
+  color: #a6f2cc;
 }
 
 .bench-tip {
@@ -984,7 +984,7 @@ onUnmounted(() => {
   min-width: 120px;
   padding: 16px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(100, 108, 255, 0.2);
+  border: 1px solid rgba(46, 207, 133, 0.2);
   background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
   text-align: center;
@@ -992,14 +992,14 @@ onUnmounted(() => {
 }
 
 .formation-option:hover {
-  border-color: rgba(100, 108, 255, 0.5);
-  background: rgba(100, 108, 255, 0.08);
+  border-color: rgba(46, 207, 133, 0.5);
+  background: rgba(46, 207, 133, 0.08);
 }
 
 .formation-option.active {
   border-color: var(--vt-c-indigo);
-  background: rgba(100, 108, 255, 0.15);
-  box-shadow: 0 0 16px rgba(100, 108, 255, 0.2);
+  background: rgba(46, 207, 133, 0.15);
+  box-shadow: 0 0 16px rgba(46, 207, 133, 0.2);
 }
 
 .formation-pitch {
@@ -1021,13 +1021,13 @@ onUnmounted(() => {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: rgba(168, 180, 255, 0.5);
+  background: rgba(166, 242, 204, 0.5);
   display: inline-block;
   transition: background 0.2s;
 }
 
 .formation-option.active .player-dot {
-  background: #a8b4ff;
+  background: #a6f2cc;
 }
 
 .formation-label {
@@ -1053,7 +1053,7 @@ onUnmounted(() => {
 .style-option {
   padding: 20px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(142, 45, 226, 0.2);
+  border: 1px solid rgba(31, 165, 106, 0.2);
   background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
   text-align: center;
@@ -1061,14 +1061,14 @@ onUnmounted(() => {
 }
 
 .style-option:hover {
-  border-color: rgba(142, 45, 226, 0.5);
-  background: rgba(142, 45, 226, 0.08);
+  border-color: rgba(31, 165, 106, 0.5);
+  background: rgba(31, 165, 106, 0.08);
 }
 
 .style-option.active {
   border-color: var(--vt-c-purple);
-  background: rgba(142, 45, 226, 0.15);
-  box-shadow: 0 0 16px rgba(142, 45, 226, 0.2);
+  background: rgba(31, 165, 106, 0.15);
+  box-shadow: 0 0 16px rgba(31, 165, 106, 0.2);
 }
 
 .style-icon {
@@ -1116,7 +1116,7 @@ onUnmounted(() => {
 
 .btn-save:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(100, 108, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(46, 207, 133, 0.3);
 }
 
 .btn-save:disabled {

@@ -98,7 +98,8 @@ const logout = async () => {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
 }
 
 .sidebar-overlay {
@@ -185,7 +186,7 @@ const logout = async () => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.8px;
-  color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.5);
   padding: 0 10px;
   margin-bottom: 10px;
   flex-shrink: 0;
@@ -197,7 +198,7 @@ const logout = async () => {
   gap: 11px;
   padding: 10px 12px;
   border-radius: 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
@@ -215,18 +216,18 @@ const logout = async () => {
 }
 
 .nav-item:hover .nav-icon {
-  background: rgba(124, 58, 237, 0.15);
+  background: rgba(46, 207, 133, 0.15);
   color: var(--accent-light);
 }
 
 .nav-item.router-link-active {
-  background: rgba(124, 58, 237, 0.14);
+  background: rgba(255, 255, 255, 0.16);
   color: var(--vt-c-text-dark-1);
   border-color: var(--border-accent);
 }
 
 .nav-item.router-link-active .nav-icon {
-  background: rgba(124, 58, 237, 0.25);
+  background: rgba(46, 207, 133, 0.25);
   color: var(--accent-light);
 }
 

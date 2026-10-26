@@ -708,7 +708,7 @@ onMounted(async () => {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, rgba(142, 45, 226, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(31, 165, 106, 0.15) 0%, transparent 70%);
   transform: rotate(25deg);
   z-index: 0;
 }
@@ -739,10 +739,10 @@ onMounted(async () => {
   align-items: center;
   gap: 7px;
   padding: 8px 16px;
-  background: rgba(100, 108, 255, 0.12);
-  border: 1px solid rgba(100, 108, 255, 0.3);
+  background: rgba(46, 207, 133, 0.12);
+  border: 1px solid rgba(46, 207, 133, 0.3);
   border-radius: 20px;
-  color: #a8b4ff;
+  color: #a6f2cc;
   font-size: 0.82em;
   font-weight: 500;
   cursor: pointer;
@@ -751,10 +751,10 @@ onMounted(async () => {
 }
 
 .settings-btn:hover {
-  background: rgba(100, 108, 255, 0.25);
-  border-color: rgba(168, 180, 255, 0.5);
+  background: rgba(46, 207, 133, 0.25);
+  border-color: rgba(166, 242, 204, 0.5);
   color: #fff;
-  box-shadow: 0 0 14px rgba(100, 108, 255, 0.2);
+  box-shadow: 0 0 14px rgba(46, 207, 133, 0.2);
 }
 
 /* Modal overlay */
@@ -771,7 +771,7 @@ onMounted(async () => {
 
 .settings-modal {
   background: #1e1a2e;
-  border: 1px solid rgba(100, 108, 255, 0.3);
+  border: 1px solid rgba(46, 207, 133, 0.3);
   border-radius: 20px;
   padding: 32px;
   width: 420px;
@@ -782,7 +782,7 @@ onMounted(async () => {
 
 .settings-modal h3 {
   font-size: 1.3em;
-  color: #a8b4ff;
+  color: #a6f2cc;
   margin-bottom: 28px;
 }
 
@@ -804,7 +804,7 @@ onMounted(async () => {
   width: 100%;
   padding: 10px 14px;
   background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(100, 108, 255, 0.25);
+  border: 1px solid rgba(46, 207, 133, 0.25);
   border-radius: 10px;
   color: #fff;
   font-size: 0.95em;
@@ -815,7 +815,7 @@ onMounted(async () => {
 }
 
 .settings-input:focus {
-  border-color: rgba(100, 108, 255, 0.6);
+  border-color: rgba(46, 207, 133, 0.6);
 }
 
 .region-options {
@@ -828,7 +828,7 @@ onMounted(async () => {
   text-align: center;
   padding: 10px;
   border-radius: 10px;
-  border: 1px solid rgba(100, 108, 255, 0.25);
+  border: 1px solid rgba(46, 207, 133, 0.25);
   color: rgba(255,255,255,0.5);
   cursor: pointer;
   font-size: 0.95em;
@@ -836,8 +836,8 @@ onMounted(async () => {
 }
 
 .region-option.active {
-  background: rgba(100, 108, 255, 0.2);
-  border-color: rgba(100, 108, 255, 0.6);
+  background: rgba(46, 207, 133, 0.2);
+  border-color: rgba(46, 207, 133, 0.6);
   color: #fff;
 }
 
@@ -868,8 +868,8 @@ onMounted(async () => {
 .btn-save {
   flex: 2;
   padding: 10px;
-  background: rgba(100, 108, 255, 0.25);
-  border: 1px solid rgba(100, 108, 255, 0.5);
+  background: rgba(46, 207, 133, 0.25);
+  border: 1px solid rgba(46, 207, 133, 0.5);
   border-radius: 10px;
   color: #fff;
   cursor: pointer;
@@ -880,8 +880,8 @@ onMounted(async () => {
 }
 
 .btn-save:hover:not(:disabled) {
-  background: rgba(100, 108, 255, 0.4);
-  box-shadow: 0 0 16px rgba(100, 108, 255, 0.3);
+  background: rgba(46, 207, 133, 0.4);
+  box-shadow: 0 0 16px rgba(46, 207, 133, 0.3);
 }
 
 .btn-save:disabled {
@@ -925,7 +925,7 @@ onMounted(async () => {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(142, 45, 226, 0.1) 0%, rgba(100, 108, 255, 0.1) 100%);
+  background: linear-gradient(120deg, rgba(31, 165, 106, 0.1) 0%, rgba(46, 207, 133, 0.1) 100%);
   transition: left 0.6s ease;
   z-index: 0;
 }
@@ -1002,7 +1002,7 @@ onMounted(async () => {
 }
 
 .league-table th {
-  background: rgba(142, 45, 226, 0.15);
+  background: rgba(31, 165, 106, 0.15);
   color: var(--vt-c-purple);
   font-weight: 600;
   text-transform: uppercase;
@@ -1013,7 +1013,7 @@ onMounted(async () => {
 
 .league-table td:first-child {
   border-radius: 8px 0 0 8px;
-  background: rgba(100, 108, 255, 0.1);
+  background: rgba(46, 207, 133, 0.1);
   color: var(--vt-c-indigo);
   font-weight: 600;
 }
@@ -1031,11 +1031,11 @@ onMounted(async () => {
 
 .league-table tbody tr:hover {
   transform: scale(1.01);
-  box-shadow: 0 8px 25px rgba(142, 45, 226, 0.2);
+  box-shadow: 0 8px 25px rgba(31, 165, 106, 0.2);
 }
 
 .league-table tbody tr:hover td:first-child {
-  background: rgba(142, 45, 226, 0.2);
+  background: rgba(31, 165, 106, 0.2);
 }
 
 .player-list {
@@ -1152,7 +1152,7 @@ h3 {
   left: 0;
   width: 200%;
   height: 200%;
-  background: repeating-radial-gradient(circle, rgba(142, 45, 226, 0.03) 0, rgba(142, 45, 226, 0.03) 10px, transparent 10px, transparent 20px);
+  background: repeating-radial-gradient(circle, rgba(31, 165, 106, 0.03) 0, rgba(31, 165, 106, 0.03) 10px, transparent 10px, transparent 20px);
   animation: backgroundMove 30s linear infinite;
   z-index: 0;
   pointer-events: none;
@@ -1177,7 +1177,7 @@ h3 {
 
 .stadium-item {
   background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(100,108,255,0.2);
+  border: 1px solid rgba(46, 207, 133,0.2);
   border-radius: 14px;
   padding: 18px;
   display: flex;
@@ -1222,7 +1222,7 @@ h3 {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  border: 1.5px solid rgba(100,108,255,0.35);
+  border: 1.5px solid rgba(46, 207, 133,0.35);
   background: transparent;
   transition: background 0.2s, border-color 0.2s;
 }
@@ -1230,16 +1230,16 @@ h3 {
 .level-dot.filled {
   background: var(--vt-c-indigo);
   border-color: var(--vt-c-indigo);
-  box-shadow: 0 0 6px rgba(100,108,255,0.5);
+  box-shadow: 0 0 6px rgba(46, 207, 133,0.5);
 }
 
 .upgrade-btn {
   width: 100%;
   padding: 9px 12px;
-  background: rgba(100,108,255,0.1);
-  border: 1px solid rgba(100,108,255,0.3);
+  background: rgba(46, 207, 133,0.1);
+  border: 1px solid rgba(46, 207, 133,0.3);
   border-radius: 9px;
-  color: #a8b4ff;
+  color: #a6f2cc;
   font-size: 0.78em;
   font-weight: 500;
   font-family: inherit;
@@ -1250,10 +1250,10 @@ h3 {
 }
 
 .upgrade-btn:hover:not(:disabled) {
-  background: rgba(100,108,255,0.22);
-  border-color: rgba(168,180,255,0.5);
+  background: rgba(46, 207, 133,0.22);
+  border-color: rgba(166, 242, 204,0.5);
   color: #fff;
-  box-shadow: 0 0 10px rgba(100,108,255,0.2);
+  box-shadow: 0 0 10px rgba(46, 207, 133,0.2);
 }
 
 .upgrade-btn:disabled {

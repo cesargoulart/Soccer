@@ -50,14 +50,14 @@ const nextSaturdayDisplay = computed(() => {
 }
 
 .countdown-banner {
-  background: rgba(100, 108, 255, 0.1);
-  border: 1px solid rgba(100, 108, 255, 0.25);
-  color: #a8b4ff;
+  background: rgba(46, 207, 133, 0.1);
+  border: 1px solid rgba(46, 207, 133, 0.25);
+  color: #a6f2cc;
 }
 
 .saturday-banner {
-  background: rgba(142, 45, 226, 0.15);
-  border: 1px solid rgba(142, 45, 226, 0.4);
+  background: rgba(31, 165, 106, 0.15);
+  border: 1px solid rgba(31, 165, 106, 0.4);
   color: #d4a8ff;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -76,7 +76,7 @@ const nextSaturdayDisplay = computed(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 45, 226, 0); }
-  50% { box-shadow: 0 0 12px 2px rgba(142, 45, 226, 0.3); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31, 165, 106, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(31, 165, 106, 0.3); }
 }
 </style>
